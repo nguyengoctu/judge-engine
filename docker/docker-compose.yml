@@ -1,0 +1,186 @@
+services:
+  # ───────────────── Databases ─────────────────
+  problem-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: problemdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - problem-db-data:/var/lib/postgresql/data
+      - ../database/problem-db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  submission-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: submissiondb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - submission-db-data:/var/lib/postgresql/data
+      - ../database/submission-db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ───────────────── Infrastructure ─────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  # ───────────────── Application Services ─────────────────
+  api-gateway:
+    build:
+      context: ../services/api-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      PROBLEM_SERVICE_HOST: problem-service
+      PROBLEM_SERVICE_PORT: 8081
+      SUBMISSION_SERVICE_HOST: submission-service
+      SUBMISSION_SERVICE_PORT: 8082
+    depends_on:
+      problem-service:
+        condition: service_healthy
+      submission-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  problem-service:
+    build:
+      context: ../services/problem-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: problem-db
+      DB_PORT: 5432
+      DB_NAME: problemdb
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    depends_on:
+      problem-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+  submission-service:
+    build:
+      context: ../services/submission-service
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      DB_HOST: submission-db
+      DB_PORT: 5432
+      DB_NAME: submissiondb
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+    depends_on:
+      submission-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8082/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build:
+      context: ../services/worker
+      dockerfile: Dockerfile
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      DB_HOST: submission-db
+      DB_PORT: 5432
+      DB_NAME: submissiondb
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      submission-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8083/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ../services/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  problem-db-data:
+  submission-db-data:
+  redis-data:
+  rabbitmq-data:

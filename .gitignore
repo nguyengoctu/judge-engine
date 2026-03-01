@@ -1,0 +1,40 @@
+# Java
+target/
+*.jar
+*.class
+.idea/
+*.iml
+.mvn/wrapper/maven-wrapper.jar
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Angular / Node
+node_modules/
+dist/
+.angular/
+
+# Docker
+docker/data/
+
+# Environment
+.env
+*.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
