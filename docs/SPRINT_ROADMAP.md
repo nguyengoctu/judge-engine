@@ -36,13 +36,13 @@ Sprint 0-1: Working App          Sprint 2-5: Local DevOps         Sprint 6-9: Cl
 | 0 ✅ | 🟢 Local | Service skeletons | Docker multi-stage builds, Compose |
 | 1 | 🟢 Local | 3 core flows | Service integration, async messaging, DB migrations |
 | 2 | 🟢 Local | Docker Compose production | Networking, NGINX proxy, logging, env management |
-| 3 | 🟢 Local | CI/CD pipeline | GitHub Actions, automated testing, image scanning |
+| 3 | 🟢 Local | CI/CD pipeline | GitHub Actions, SonarQube, Trivy, Dependabot |
 | 4 | 🔵 K8s | Kubernetes basics | Manifests, Deployments, Services, ConfigMaps, kubectl |
 | 5 | 🔵 K8s | Helm + Monitoring | Helm charts, Prometheus, Grafana, HPA, load testing |
 | 6 | 🟠 AWS | Terraform + AWS | IaC modules, VPC, ECR, RDS, ElastiCache, SQS |
-| 7 | 🟠 AWS | Deploy ECS Fargate | ECS tasks/services, ALB, CloudWatch, CD pipeline |
-| 8 | 🟣 EKS | Deploy EKS | Managed K8s, IRSA, ALB Controller, Cluster Autoscaler |
-| 9 | 🟣 EKS | Production hardening | Observability, alerting, security, DR, cost |
+| 7 | 🟠 AWS | Deploy ECS Fargate | ECS, ALB, Route53, ACM, CloudFront, Blue/Green, CD |
+| 8 | 🟣 EKS | Deploy EKS | EKS, IRSA, ArgoCD, Canary deploy, Cluster Autoscaler |
+| 9 | 🟣 EKS | Production hardening | EFK logging, OpenTelemetry, WAF, Chaos Engineering |
 
 ---
 

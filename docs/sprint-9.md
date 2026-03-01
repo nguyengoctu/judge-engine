@@ -49,6 +49,23 @@
 - [ ] Non-root containers, read-only FS
 - [ ] ECR image scanning, RBAC, audit logging
 
+### WAF (Web Application Firewall)
+
+- [ ] Deploy AWS WAF in front of ALB
+- [ ] Rules: rate limiting, SQL injection protection, XSS protection
+- [ ] AWS Managed Rules (Core Rule Set, Known Bad Inputs)
+- [ ] Custom rule: block requests > 10 req/s per IP
+- [ ] WAF logs → S3 → analyze blocked requests
+
+### Chaos Engineering
+
+- [ ] Install Litmus Chaos or Chaos Mesh on EKS
+- [ ] Experiment 1: Kill random Worker pods → HPA recovers
+- [ ] Experiment 2: Network latency between services → app degrades gracefully
+- [ ] Experiment 3: DB failover (RDS reboot) → app reconnects
+- [ ] Document results: what broke, what survived, lessons learned
+- [ ] Create GameDay runbook for team chaos exercises
+
 ### Production Readiness
 
 - [ ] PDB, rolling updates, topology spread, graceful shutdown

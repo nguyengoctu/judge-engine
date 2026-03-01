@@ -15,6 +15,7 @@
 | **Path Filters** | Only build/test changed services | Monorepo efficiency |
 | **Docker Image Tags** | Git SHA tags, semantic versioning | Know which version is deployed |
 | **Container Scanning** | Trivy vulnerability scanning | Catch CVEs before production |
+| **SonarQube** | Code quality, static analysis, test coverage, code smells | Quality gates block bad code |
 | **Branch Protection** | Required checks, review rules | Prevent broken merges |
 
 ---
@@ -37,6 +38,21 @@
 ### Branch Protection
 
 - [ ] Protect `main`, require CI pass
+
+### SonarQube
+
+- [ ] Add SonarQube container to Docker Compose (Community Edition, self-hosted)
+- [ ] Configure sonar-project.properties for Java and Python services
+- [ ] Add SonarQube scan step in CI workflow (after tests, before build)
+- [ ] Set quality gate: no new bugs, no new vulnerabilities, coverage >= 70%
+- [ ] Block PR merge if quality gate fails
+
+### Dependabot
+
+- [ ] Enable Dependabot for dependency vulnerability scanning
+- [ ] Configure `.github/dependabot.yml` for Maven, pip, npm
+- [ ] Auto-create PRs for vulnerable dependencies
+- [ ] Dependabot alerts visible in GitHub Security tab
 
 ---
 

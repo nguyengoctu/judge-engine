@@ -15,6 +15,8 @@
 | **ALB Ingress Controller** | Ingress backed by real AWS ALB | Bridge K8s and AWS networking |
 | **Cluster Autoscaler** | Scale nodes based on pending pods | Infrastructure scales on demand |
 | **External Secrets Operator** | Sync Secrets Manager → K8s Secrets | Bridge AWS secrets into K8s |
+| **ArgoCD** | GitOps — deploy from Git, auto-sync, declarative | Industry-standard K8s CD |
+| **Canary Deploy** | Progressive traffic shifting (10% → 50% → 100%) | Safe rollouts with automatic rollback |
 
 ---
 
@@ -30,6 +32,22 @@
 
 - [ ] `values-eks.yaml`: ECR images, RDS/ElastiCache/SQS endpoints, IRSA, disable StatefulSets
 - [ ] `helm install -f values-eks.yaml`
+
+### ArgoCD (GitOps)
+
+- [ ] Install ArgoCD on EKS via Helm
+- [ ] Create ArgoCD Application pointing to Helm chart in Git repo
+- [ ] Auto-sync: push to Git → ArgoCD detects → applies to cluster
+- [ ] ArgoCD UI: visualize app state, sync status, health
+- [ ] Rollback via Git revert (not `helm rollback`)
+
+### Canary Deployment
+
+- [ ] Install Argo Rollouts (or Flagger)
+- [ ] Convert Deployment → Rollout with canary strategy
+- [ ] Traffic shifting: 10% → 30% → 50% → 100%
+- [ ] Auto-promote on success, auto-rollback on failure (error rate > 5%)
+- [ ] Observable in Grafana: compare canary vs stable metrics
 
 ### The Big HPA Test
 

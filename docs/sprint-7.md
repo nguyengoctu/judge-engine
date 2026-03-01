@@ -16,6 +16,9 @@
 | **CloudWatch** | Logs, metrics, insights | Centralized logging/monitoring |
 | **Secrets Manager** | Store/rotate secrets, ECS integration | Production secret management |
 | **SQS** | Replace RabbitMQ — Worker reads from SQS | Managed queue in AWS |
+| **Route53 + ACM** | Custom domain, DNS, HTTPS/TLS certificate | Real production URL |
+| **CloudFront** | CDN for frontend static assets | Fast global delivery, caching |
+| **Blue/Green Deploy** | Zero-downtime deployment strategy | No user impact during deploys |
 
 ---
 
@@ -32,6 +35,21 @@
 - [ ] ALB: `/` → frontend, `/api/*` → gateway
 - [ ] Cloud Map for internal routing
 - [ ] Security groups: ALB → ECS → RDS/ElastiCache
+
+### Route53 + ACM + CloudFront
+
+- [ ] Register or configure custom domain in Route53
+- [ ] Request ACM certificate (auto-validate via DNS)
+- [ ] ALB listener: redirect HTTP → HTTPS
+- [ ] CloudFront distribution for frontend (S3 or ECS origin)
+- [ ] Route53 alias record → CloudFront / ALB
+
+### Blue/Green Deployment
+
+- [ ] Configure ECS with CodeDeploy for blue/green
+- [ ] Two target groups on ALB
+- [ ] Deploy: new task set (green), shift traffic, terminate old (blue)
+- [ ] Automatic rollback on health check failure
 
 ### CD Pipeline → ECS
 
