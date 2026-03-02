@@ -55,23 +55,43 @@ The full path: **Frontend → API Gateway → Submission Service → RabbitMQ �
 
 ---
 
-## Flow 2: Mock Execution (CPU/RAM Burn)
+## Flow 2: Mock Execution (Random Outcomes)
 
-**Purpose**: Simulate a resource-intensive code execution without building a real sandbox. This is what will trigger HPA and test resource limits.
+**Purpose**: Simulate realistic code execution — some pass, some timeout, some get killed for using too much memory. This is what triggers HPA and tests resource limits in later sprints.
 
 ### Worker Mock Executor
 
-- [ ] Function `mock_execute(code, language)`:
-  - Simulate CPU work: busy loop for 2-5 seconds (configurable via env var `MOCK_EXEC_SECONDS`)
-  - Simulate memory: allocate a large list/array (~100MB) during execution
-  - Return mock result: `{"passed": true, "execution_time_ms": <actual_time>, "output": "mock result"}`
-- [ ] Log: `"Processing submission {id}, burning CPU for {n} seconds"`
-- [ ] After execution, update submission in DB:
-  - `status` = `passed`
-  - `results` = JSON with execution time
-  - `execution_time` = actual ms taken
+- [ ] Function `mock_execute(code, language)` with **random outcomes**:
 
-**Important**: The execution time and memory usage must be real (not faked) — this is what triggers K8s resource limits and HPA scaling.
+| Outcome | Probability | What Happens | CPU/RAM Impact |
+|---------|-------------|-------------|----------------|
+| ✅ `passed` | 60% | Light CPU burn (1-3s), return mock output | Low |
+| ⏱️ `timeout` | 25% | Heavy CPU burn (exceeds `MOCK_EXEC_TIMEOUT` env var, default 5s) | High CPU |
+| 💀 `oom_killed` | 15% | Allocate huge memory (~500MB+), simulate OOM | High RAM |
+
+- [ ] Each outcome returns a detailed result:
+  - `passed`: `{"status": "passed", "execution_time_ms": 1247, "output": "mock output", "memory_mb": 32}`
+  - `timeout`: `{"status": "timeout", "execution_time_ms": 5000, "error": "Execution exceeded 5s time limit"}`
+  - `oom_killed`: `{"status": "oom_killed", "execution_time_ms": 812, "error": "Process killed: memory limit exceeded (512MB)"}`
+- [ ] CPU and memory usage must be **real** (not faked) — this is what triggers K8s limits
+- [ ] Log clearly: `"Submission {id}: outcome={status}, cpu_time={n}s, memory={m}MB"`
+- [ ] Configurable via env vars: `MOCK_EXEC_TIMEOUT=5`, `MOCK_EXEC_MAX_MEMORY_MB=512`
+
+### Why Random Matters for DevOps
+
+| Scenario | What It Tests in K8s/ECS |
+|----------|------------------------|
+| `passed` (60%) | Normal flow: HPA stays calm |
+| `timeout` (25%) | High CPU → HPA scales up Workers when queue fills |
+| `oom_killed` (15%) | Memory spike → K8s OOMKill if no resource limits → pod restart → lesson learned |
+
+### Frontend — Show Results
+
+- [ ] After polling `GET /api/submissions/{id}`, display result based on status:
+  - ✅ **passed**: green badge, execution time, output
+  - ⏱️ **timeout**: orange badge, "Execution exceeded time limit (5s)"
+  - 💀 **oom_killed**: red badge, "Process killed: memory limit exceeded"
+- [ ] Show execution_time_ms and memory_mb for all outcomes
 
 ---
 

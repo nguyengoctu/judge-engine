@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from app.routes import health
+from app.routes import submissions
+from app.routes import queue_status
 
 app = FastAPI(
     title="Submission Service API",
@@ -14,8 +16,10 @@ app = FastAPI(
     openapi_tags=[
         {"name": "Health", "description": "Service health checks"},
         {"name": "Submissions", "description": "Code submission and execution"},
-        {"name": "Competitions", "description": "Competition leaderboards"},
+        {"name": "Queue", "description": "Queue monitoring"},
     ],
 )
 
 app.include_router(health.router, tags=["Health"])
+app.include_router(submissions.router)
+app.include_router(queue_status.router)

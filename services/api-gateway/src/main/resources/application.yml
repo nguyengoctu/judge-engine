@@ -14,7 +14,7 @@ spring:
         - id: submission-service
           uri: http://${SUBMISSION_SERVICE_HOST:localhost}:${SUBMISSION_SERVICE_PORT:8082}
           predicates:
-            - Path=/api/submissions/**,/api/competitions/**
+            - Path=/api/submissions/**,/api/competitions/**,/api/queue/**
 
 management:
   endpoints:
