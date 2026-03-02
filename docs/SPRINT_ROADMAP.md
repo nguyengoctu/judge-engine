@@ -34,7 +34,7 @@ Sprint 0-1: Working App          Sprint 2-5: Local DevOps         Sprint 6-9: Cl
 | Sprint | Phase | Focus | Key DevOps Skill Practiced |
 |--------|-------|-------|---------------------------|
 | 0 ✅ | 🟢 Local | Service skeletons | Docker multi-stage builds, Compose |
-| 1 | 🟢 Local | 3 core flows | Service integration, async messaging, DB migrations |
+| 1 ✅ | 🟢 Local | 3 core flows | Service integration, async messaging, DB migrations |
 | 2 | 🟢 Local | Docker Compose production | Networking, NGINX proxy, logging, env management |
 | 3 | 🟢 Local | CI/CD pipeline | GitHub Actions, SonarQube, Trivy, Dependabot |
 | 4 | 🔵 K8s | Kubernetes basics | Manifests, Deployments, Services, ConfigMaps, kubectl |
@@ -43,6 +43,7 @@ Sprint 0-1: Working App          Sprint 2-5: Local DevOps         Sprint 6-9: Cl
 | 7 | 🟠 AWS | Deploy ECS Fargate | ECS, ALB, Route53, ACM, CloudFront, Blue/Green, CD |
 | 8 | 🟣 EKS | Deploy EKS | EKS, IRSA, ArgoCD, Canary deploy, Cluster Autoscaler |
 | 9 | 🟣 EKS | Production hardening | EFK logging, OpenTelemetry, WAF, Chaos Engineering |
+| 10 | ☁️ Serverless | Full serverless | Lambda, API Gateway, S3, DynamoDB, SQS, SAM/CDK |
 
 ---
 
