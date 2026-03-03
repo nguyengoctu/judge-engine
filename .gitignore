@@ -38,3 +38,6 @@ docker/data/
 # OS
 .DS_Store
 Thumbs.db
+
+# tmp md
+docs/sprint-*/

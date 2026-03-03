@@ -1,21 +1,23 @@
 .PHONY: dev dev-detached stop clean build test test-java test-python test-frontend status logs health
 
 # ─── Development ───
-dev:
-	cd docker && docker compose up --build
+dev-start:
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
-dev-detached:
-	cd docker && docker compose up --build -d
+dev-stop:
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml down
 
-stop:
-	cd docker && docker compose down
+dev-logs:
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml logs -f
 
-clean:
-	cd docker && docker compose down -v --rmi local
+dev-status:
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml ps
 
-# ─── Build ───
-build:
-	cd docker && docker compose build
+dev-clean:
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml down -v --rmi local
+
+dev-build:
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml build
 
 # ─── Test (all via Docker, no local installs needed) ───
 test: test-java test-python
@@ -32,15 +34,18 @@ test-python:
 	@echo "=== Testing Worker ==="
 	docker run --rm -v $(PWD)/services/worker:/app -w /app python:3.11-slim sh -c "pip install -q -r requirements.txt && pytest tests/ -v"
 
-# ─── Status ───
-status:
-	cd docker && docker compose ps
 
-logs:
-	cd docker && docker compose logs -f
-
-logs-%:
-	cd docker && docker compose logs -f $*
+# deploy
+deploy-compose:
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+deploy-stop: 
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+deploy-logs: 
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f
+deploy-status: 
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+deploy-clean:
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.prod.yml down -v --rmi local
 
 # ─── Health Check ───
 health:

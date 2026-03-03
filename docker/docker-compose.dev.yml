@@ -1,0 +1,43 @@
+services:
+  # ───────────────── Databases ─────────────────
+  problem-db:
+    ports:
+      - "5432:5432"
+  submission-db:
+    ports:
+      - "5433:5432"
+
+  # ───────────────── Infrastructure ─────────────────
+  redis:
+    ports:
+      - "6379:6379"
+
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # ───────────────── Application Services ─────────────────
+  api-gateway:
+    ports:
+      - "8080:8080"
+
+  problem-service:
+    ports:
+      - "8081:8081"
+
+  submission-service:
+    ports:
+      - "8082:8082"
+
+  worker:
+    ports:
+      - "8083:8083"
+
+  frontend:
+    ports:
+      - "4200:80"
+
+  nginx:
+    ports:
+      - "80:80"

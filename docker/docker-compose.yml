@@ -6,13 +6,11 @@ services:
       POSTGRES_DB: problemdb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+    ports: []
     networks:
       - backend-net
     volumes:
       - problem-db-data:/var/lib/postgresql/data
-      - ../database/problem-db/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -25,13 +23,11 @@ services:
       POSTGRES_DB: submissiondb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5433:5432"
+    ports: []
     networks:
       - backend-net
     volumes:
       - submission-db-data:/var/lib/postgresql/data
-      - ../database/submission-db/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -41,8 +37,7 @@ services:
   # ───────────────── Infrastructure ─────────────────
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    ports: []
     networks:
       - backend-net
     volumes:
@@ -55,9 +50,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    ports: []
     networks:
       - backend-net
     environment:
@@ -76,8 +69,7 @@ services:
     build:
       context: ../services/api-gateway
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+    ports: []
     networks:
       - backend-net
       - frontend-net
@@ -101,8 +93,7 @@ services:
     build:
       context: ../services/problem-service
       dockerfile: Dockerfile
-    ports:
-      - "8081:8081"
+    ports: []
     networks:
       - backend-net
     environment:
@@ -125,8 +116,7 @@ services:
     build:
       context: ../services/submission-service
       dockerfile: Dockerfile
-    ports:
-      - "8082:8082"
+    ports: []
     networks:
       - backend-net
     environment:
@@ -156,8 +146,7 @@ services:
     build:
       context: ../services/worker
       dockerfile: Dockerfile
-    ports:
-      - "8083:8083"
+    ports: []
     networks:
       - backend-net
     environment:
@@ -187,8 +176,7 @@ services:
     build:
       context: ../services/frontend
       dockerfile: Dockerfile
-    ports:
-      - "4200:80"
+    ports: []
     networks:
       - frontend-net
     depends_on:
@@ -201,24 +189,22 @@ services:
       retries: 3
 
   nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports: []
     networks:
       - frontend-net
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     depends_on:
       api-gateway:
         condition: service_healthy
       frontend:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/nginx-health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/nginx-health"]
       interval: 15s
       timeout: 5s
       retries: 3
-    restart: unless-stopped
 
 volumes:
   problem-db-data:

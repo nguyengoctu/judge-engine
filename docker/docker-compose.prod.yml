@@ -1,0 +1,74 @@
+services:
+  problem-db:
+    restart: unless-stopped      
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+  submission-db:
+    restart: unless-stopped            
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+  redis:
+    restart: unless-stopped            
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+  rabbitmq:
+    restart: unless-stopped            
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+  api-gateway:
+    restart: unless-stopped            
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+  problem-service:
+    restart: unless-stopped            
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+  submission-service:
+    restart: unless-stopped            
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+  worker:
+    deploy:
+      replicas: 2          
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M    
+    restart: unless-stopped            
+  frontend:
+    restart: unless-stopped            
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+  nginx:
+    restart: unless-stopped          
+    ports: 
+      - "80:80"  
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M

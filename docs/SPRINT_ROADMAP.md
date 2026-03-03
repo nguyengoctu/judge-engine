@@ -36,6 +36,7 @@ Sprint 0-1: Working App          Sprint 2-5: Local DevOps         Sprint 6-9: Cl
 | 0 ✅ | 🟢 Local | Service skeletons | Docker multi-stage builds, Compose |
 | 1 ✅ | 🟢 Local | 3 core flows | Service integration, async messaging, DB migrations |
 | 2 | 🟢 Local | Docker Compose production | Networking, NGINX proxy, logging, env management |
+| 2.5 | 🟢 Local | Docker Sandbox Executor | Docker-in-Docker, container isolation, resource limits, security |
 | 3 | 🟢 Local | CI/CD pipeline | GitHub Actions, SonarQube, Trivy, Dependabot |
 | 4 | 🔵 K8s | Kubernetes basics | Manifests, Deployments, Services, ConfigMaps, kubectl |
 | 5 | 🔵 K8s | Helm + Monitoring | Helm charts, Prometheus, Grafana, HPA, load testing |
