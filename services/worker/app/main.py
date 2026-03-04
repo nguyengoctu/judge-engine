@@ -1,9 +1,11 @@
+from app.logging_config import setup_logging
+setup_logging("worker")
+
 import logging
 import threading
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 

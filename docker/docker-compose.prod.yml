@@ -29,6 +29,8 @@ services:
           memory: 512M
   api-gateway:
     restart: unless-stopped            
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
     deploy:
       resources:
         limits:
@@ -36,6 +38,8 @@ services:
           memory: 512M
   problem-service:
     restart: unless-stopped            
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
     deploy:
       resources:
         limits:

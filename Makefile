@@ -1,8 +1,11 @@
 .PHONY: dev dev-detached stop clean build test test-java test-python test-frontend status logs health
 
 # ─── Development ───
-dev-start:
+dev-start-detached:
 	cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
+
+dev-start:
+	cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 dev-stop:
 	cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml down

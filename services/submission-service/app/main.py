@@ -1,3 +1,6 @@
+from app.logging_config import setup_logging
+setup_logging("submission-service")
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import text
