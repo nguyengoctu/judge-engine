@@ -159,6 +159,11 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
+      EXECUTOR_MODE: ${EXECUTOR_MODE:-docker}
+      SANDBOX_MEMORY_LIMIT: ${SANDBOX_MEMORY_LIMIT:-256m}
+      SANDBOX_CPU_LIMIT: ${SANDBOX_CPU_LIMIT:-0.5}
+      SANDBOX_TIMEOUT: ${SANDBOX_TIMEOUT:-10}
+      SANDBOX_PIDS_LIMIT: ${SANDBOX_PIDS_LIMIT:-50}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
@@ -205,6 +210,28 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+
+  # ───────────────── Runner Images (build-only) ─────────────────
+  judge-runner-python:
+    image: judge-runner-python:latest
+    build:
+      context: ./runners
+      dockerfile: Dockerfile.python
+    profiles: ["build"]
+
+  judge-runner-javascript:
+    image: judge-runner-javascript:latest
+    build:
+      context: ./runners
+      dockerfile: Dockerfile.javascript
+    profiles: ["build"]
+
+  judge-runner-java:
+    image: judge-runner-java:latest
+    build:
+      context: ./runners
+      dockerfile: Dockerfile.java
+    profiles: ["build"]
 
 volumes:
   problem-db-data:

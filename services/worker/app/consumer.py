@@ -5,10 +5,9 @@ import pika
 import sqlalchemy
 from sqlalchemy.orm import Session
 
-from app.executor.mock_executor import mock_execute
-
 logger = logging.getLogger(__name__)
 
+EXECUTOR_MODE = os.getenv("EXECUTOR_MODE", "mock")
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))
 EXCHANGE = "submissions"
@@ -22,6 +21,19 @@ DB_URL = (
 )
 
 engine = sqlalchemy.create_engine(DB_URL, pool_pre_ping=True)
+
+
+def _get_executor():
+    """Get the appropriate executor function based on EXECUTOR_MODE."""
+    if EXECUTOR_MODE == "docker":
+        from app.executor.docker_executor import docker_execute
+        return docker_execute
+    else:
+        from app.executor.mock_executor import mock_execute
+        return mock_execute
+
+
+execute = _get_executor()
 
 
 def update_submission(submission_id: str, status: str, results: dict, execution_time: int, memory_used: int):
@@ -52,13 +64,13 @@ def on_message(channel, method, properties, body):
         code = message["code"]
         language = message["language"]
 
-        logger.info(f"Processing submission {submission_id}, language={language}")
+        logger.info(f"Processing submission {submission_id}, language={language}, executor={EXECUTOR_MODE}")
 
         # Update status to running
         update_submission(submission_id, "running", {}, 0, 0)
 
-        # Execute mock
-        result = mock_execute(code, language)
+        # Execute code
+        result = execute(code, language)
 
         # Map status
         final_status = result["status"]

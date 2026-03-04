@@ -2,10 +2,10 @@ services:
   # ───────────────── Databases ─────────────────
   problem-db:
     ports:
-      - "${PROBLEM_DB_PORT:-5432}:${PROBLEM_DB_PORT:-5432}"
+      - "${PROBLEM_DB_PORT:-5432}:5432"
   submission-db:
     ports:
-      - "${SUBMISSION_DB_PORT:-5433}:${SUBMISSION_DB_PORT:-5432}"
+      - "${SUBMISSION_DB_EXTERNAL_PORT:-5433}:5432"
 
   # ───────────────── Infrastructure ─────────────────
   redis:

@@ -12,8 +12,16 @@ class Settings(BaseSettings):
     redis_host: str = "localhost"
     redis_port: int = 6379
 
+    # Executor config
+    executor_mode: str = "mock"  # "mock" or "docker"
+    sandbox_memory_limit: str = "256m"
+    sandbox_cpu_limit: float = 0.5
+    sandbox_timeout: int = 10
+    sandbox_pids_limit: int = 50
+
     class Config:
         env_file = ".env"
 
 
 settings = Settings()
+

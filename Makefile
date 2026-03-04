@@ -1,10 +1,14 @@
-.PHONY: dev dev-detached stop clean build test test-java test-python test-frontend status logs health
+.PHONY: dev dev-detached stop clean build test test-java test-python test-frontend status logs health build-runners
+
+# ─── Runner Images (sandbox) ───
+build-runners:
+	cd docker && docker compose --profile build build
 
 # ─── Development ───
-dev-start-detached:
+dev-detached: build-runners
 	cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
 
-dev-start:
+dev: build-runners
 	cd docker && docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 dev-stop:
@@ -39,7 +43,7 @@ test-python:
 
 
 # deploy
-deploy-compose:
+deploy-compose: build-runners
 	cd docker && docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 deploy-stop: 
 	cd docker && docker compose -f docker-compose.yml -f docker-compose.prod.yml down

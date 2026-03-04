@@ -2,16 +2,25 @@ from app.logging_config import setup_logging
 setup_logging("worker")
 
 import logging
+import os
 import threading
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 logger = logging.getLogger(__name__)
 
+EXECUTOR_MODE = os.getenv("EXECUTOR_MODE", "mock")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Start RabbitMQ consumer in background thread on app startup."""
+    """Pre-pull runner images and start RabbitMQ consumer on app startup."""
+    logger.info(f"Worker starting with executor_mode={EXECUTOR_MODE}")
+
+    if EXECUTOR_MODE == "docker":
+        from app.executor.docker_executor import pull_runner_images
+        pull_runner_images()
+
     logger.info("Starting worker consumer thread...")
     from app.consumer import start_consumer
 
