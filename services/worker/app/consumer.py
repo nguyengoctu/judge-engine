@@ -3,7 +3,6 @@ import logging
 import os
 import pika
 import sqlalchemy
-from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -14,10 +13,15 @@ EXCHANGE = "submissions"
 QUEUE = "submissions.execute"
 ROUTING_KEY = "submissions.execute"
 
+_db_user = os.getenv("DB_USER", "postgres")
+_db_pass = os.getenv("DB_PASSWORD", "postgres")
+_db_host = os.getenv("DB_HOST", "localhost")
+_db_port = os.getenv("DB_PORT", "5432")
+_db_name = os.getenv("DB_NAME", "submissiondb")
+
 DB_URL = (
-    f"postgresql://{os.getenv('DB_USER', 'postgres')}:{os.getenv('DB_PASSWORD', 'postgres')}"
-    f"@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}"
-    f"/{os.getenv('DB_NAME', 'submissiondb')}"
+    f"postgresql://{_db_user}:{_db_pass}"
+    f"@{_db_host}:{_db_port}/{_db_name}"
 )
 
 engine = sqlalchemy.create_engine(DB_URL, pool_pre_ping=True)
@@ -36,7 +40,13 @@ def _get_executor():
 execute = _get_executor()
 
 
-def update_submission(submission_id: str, status: str, results: dict, execution_time: int, memory_used: int):
+def update_submission(
+    submission_id: str,
+    status: str,
+    results: dict,
+    execution_time: int,
+    memory_used: int,
+):
     """Update submission status directly in database."""
     with engine.connect() as conn:
         conn.execute(
@@ -64,7 +74,8 @@ def on_message(channel, method, properties, body):
         code = message["code"]
         language = message["language"]
 
-        logger.info(f"Processing submission {submission_id}, language={language}, executor={EXECUTOR_MODE}")
+        logger.info(f"Processing submission {submission_id}, "
+                    f"language={language}, executor={EXECUTOR_MODE}")
 
         # Update status to running
         update_submission(submission_id, "running", {}, 0, 0)
@@ -110,11 +121,14 @@ def start_consumer():
     )
     channel = connection.channel()
 
-    channel.exchange_declare(exchange=EXCHANGE, exchange_type="direct", durable=True)
+    channel.exchange_declare(exchange=EXCHANGE,
+                             exchange_type="direct",
+                             durable=True)
     channel.queue_declare(queue=QUEUE, durable=True)
     channel.queue_bind(queue=QUEUE, exchange=EXCHANGE, routing_key=ROUTING_KEY)
 
-    # Process one message at a time (important for HPA — backlog = scale trigger)
+    # Process one message at a time
+    # (important for HPA — backlog = scale trigger)
     channel.basic_qos(prefetch_count=1)
     channel.basic_consume(queue=QUEUE, on_message_callback=on_message)
 

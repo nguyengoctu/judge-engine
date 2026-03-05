@@ -2,7 +2,6 @@ import logging
 import os
 import random
 import time
-import tracemalloc
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,8 @@ def _execute_passed(code: str, language: str) -> dict:
         _ = counter * counter
 
     elapsed_ms = int((time.time() - start) * 1000)
-    logger.info(f"Mock execute: PASSED, cpu_time={elapsed_ms}ms, language={language}")
+    logger.info(f"Mock execute: PASSED, cpu_time={elapsed_ms}ms, \
+        language={language}")
 
     return {
         "status": "passed",
@@ -59,10 +59,13 @@ def _execute_timeout(code: str, language: str) -> dict:
     counter = 0
     while time.time() - start < timeout_seconds:
         counter += 1
-        _ = counter ** 2 + counter ** 3  # heavier computation
+        _ = counter**2 + counter**3  # heavier computation
 
     elapsed_ms = int((time.time() - start) * 1000)
-    logger.warning(f"Mock execute: TIMEOUT, cpu_time={elapsed_ms}ms, limit={MOCK_EXEC_TIMEOUT}s")
+    logger.warning(
+        f"Mock execute: TIMEOUT, cpu_time={elapsed_ms}ms, \
+            limit={MOCK_EXEC_TIMEOUT}s"
+    )
 
     return {
         "status": "timeout",
@@ -88,7 +91,10 @@ def _execute_oom(code: str, language: str) -> dict:
         pass
 
     elapsed_ms = int((time.time() - start) * 1000)
-    logger.warning(f"Mock execute: OOM_KILLED, memory={target_mb}MB, cpu_time={elapsed_ms}ms")
+    logger.warning(
+        f"Mock execute: OOM_KILLED, memory={target_mb}MB, \
+            cpu_time={elapsed_ms}ms"
+    )
 
     return {
         "status": "oom_killed",

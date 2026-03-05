@@ -7,7 +7,8 @@ router = APIRouter(prefix="/api/queue", tags=["Queue"])
 
 
 @router.get("/status", summary="Queue status",
-            description="Returns message count and consumer count for the submissions queue.")
+            description="Returns message count and\
+                 consumer count for the submissions queue.")
 def queue_status():
     try:
         connection = get_connection()

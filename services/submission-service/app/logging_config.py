@@ -6,7 +6,8 @@ from pythonjsonlogger import jsonlogger
 
 
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
-    """JSON formatter with consistent field names across all Python services."""
+    """JSON formatter with consistent field names
+    across all Python services."""
 
     def __init__(self, service_name: str):
         super().__init__()
@@ -27,7 +28,8 @@ def setup_logging(service_name: str, level: int = logging.INFO):
     """Configure structured JSON logging for a Python service.
 
     Args:
-        service_name: Name of the service (e.g., "submission-service", "worker")
+        service_name: Name of the service
+        (e.g., "submission-service", "worker")
         level: Default log level
     """
     handler = logging.StreamHandler(sys.stdout)

@@ -1,11 +1,12 @@
-from app.logging_config import setup_logging
-setup_logging("worker")
-
 import logging
 import os
 import threading
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+
+from app.logging_config import setup_logging
+
+setup_logging("worker")
 
 logger = logging.getLogger(__name__)
 

@@ -2,12 +2,11 @@ import io
 import logging
 import os
 import tarfile
-import tempfile
 import time
 import uuid
 
 import docker
-from docker.errors import ContainerError, ImageNotFound, APIError
+from docker.errors import ImageNotFound, APIError
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,12 @@ LANGUAGE_EXTENSIONS = {
 LANGUAGE_COMMANDS = {
     "python": ["python", "/code/solution.py"],
     "javascript": ["node", "/code/solution.js"],
-    "java": ["sh", "-c", "cd /tmp && cp /code/Solution.java . && javac Solution.java && java Solution"],
+    "java": [
+        "sh",
+        "-c",
+        "cd /tmp && cp /code/Solution.java . \
+             && javac Solution.java && java Solution",
+    ],
 }
 
 # Sandbox config from env
@@ -65,8 +69,12 @@ def pull_runner_images():
             client.images.get(image)
             logger.info(f"Runner image ready: {image}")
         except ImageNotFound:
-            logger.warning(f"Runner image {image} not found locally. "
-                           f"Build it with: docker build -t {image} -f docker/runners/Dockerfile.{language} docker/runners/")
+            logger.warning(
+                f"Runner image {image} not found locally. "
+                f"Build it with: docker build -t {image} \
+                            -f docker/runners/Dockerfile.{language} \
+                            docker/runners/"
+            )
     client.close()
 
 
@@ -74,7 +82,8 @@ def docker_execute(code: str, language: str) -> dict:
     """
     Execute user code inside an isolated Docker container.
 
-    Uses put_archive to inject code (avoids Docker-in-Docker volume mount issues).
+    Uses put_archive to inject code
+    (avoids Docker-in-Docker volume mount issues).
     Returns dict with: status, execution_time_ms, memory_mb, output/error
     """
     if language not in LANGUAGE_IMAGES:
@@ -107,11 +116,13 @@ def docker_execute(code: str, language: str) -> dict:
             network_mode="none",
             cap_drop=["ALL"],
             security_opt=["no-new-privileges"],
-            # Filesystem — writable so we can inject code + Java can compile in /tmp
+            # Filesystem — writable so we can inject code
+            # Java can compile in /tmp
             tmpfs={"/tmp": "rw,exec,size=10m"},
         )
 
-        # Inject code into container via tar archive (avoids DinD volume issues)
+        # Inject code into container via tar archive
+        # (avoids DinD volume issues)
         tar_data = _make_tar(filename, code)
         container.put_archive("/code", tar_data)
 
@@ -124,7 +135,10 @@ def docker_execute(code: str, language: str) -> dict:
             exit_code = result.get("StatusCode", -1)
         except Exception:
             # Timeout — kill container
-            logger.warning(f"Container {container_name} timed out after {SANDBOX_TIMEOUT}s")
+            logger.warning(
+                f"Container {container_name} \
+                timed out after {SANDBOX_TIMEOUT}s"
+            )
             try:
                 container.kill()
             except Exception:
@@ -135,8 +149,16 @@ def docker_execute(code: str, language: str) -> dict:
 
         # Capture output
         try:
-            stdout = container.logs(stdout=True, stderr=False).decode("utf-8", errors="replace").strip()
-            stderr = container.logs(stdout=False, stderr=True).decode("utf-8", errors="replace").strip()
+            stdout = (
+                container.logs(stdout=True, stderr=False)
+                .decode("utf-8", errors="replace")
+                .strip()
+            )
+            stderr = (
+                container.logs(stdout=False, stderr=True)
+                .decode("utf-8", errors="replace")
+                .strip()
+            )
         except Exception:
             stdout = ""
             stderr = ""
@@ -145,7 +167,11 @@ def docker_execute(code: str, language: str) -> dict:
         memory_mb = 0
         try:
             stats = container.stats(stream=False)
-            memory_mb = int(stats.get("memory_stats", {}).get("max_usage", 0) / (1024 * 1024))
+            memory_mb = int(
+                stats
+                .get("memory_stats", {})
+                .get("max_usage", 0) / (1024 * 1024)
+            )
         except Exception:
             pass
 
@@ -171,7 +197,9 @@ def docker_execute(code: str, language: str) -> dict:
         if status == "passed":
             result_dict["output"] = stdout[:10000]  # cap output
         else:
-            result_dict["error"] = stderr[:5000] if stderr else f"Exit code: {exit_code}"
+            result_dict["error"] = (
+                stderr[:5000] if stderr else f"Exit code: {exit_code}"
+            )
             if stdout:
                 result_dict["output"] = stdout[:5000]
 

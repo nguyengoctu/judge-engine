@@ -1,9 +1,7 @@
-from app.logging_config import setup_logging
-setup_logging("submission-service")
-
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import text
+
 from app.database import engine, Base
 from app.routes import health
 from app.routes import submissions
@@ -24,7 +22,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Submission Service API",
-    description="Handle code submissions, check execution status, and manage leaderboards.",
+    description="Handle code submissions, check execution status,\
+        and manage leaderboards.",
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs",
@@ -34,13 +33,21 @@ app = FastAPI(
         "name": "Online Judge Team",
     },
     openapi_tags=[
-        {"name": "Health", "description": "Service health checks"},
-        {"name": "Submissions", "description": "Code submission and execution"},
-        {"name": "Queue", "description": "Queue monitoring"},
+        {
+            "name": "Health",
+            "description": "Service health checks"
+        },
+        {
+            "name": "Submissions",
+            "description": "Code submission and execution"
+        },
+        {
+            "name": "Queue",
+            "description": "Queue monitoring"
+        },
     ],
 )
 
 app.include_router(health.router, tags=["Health"])
 app.include_router(submissions.router)
 app.include_router(queue_status.router)
-

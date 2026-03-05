@@ -25,15 +25,21 @@ def publish_submission(submission_id: str, code: str, language: str):
         connection = get_connection()
         channel = connection.channel()
 
-        channel.exchange_declare(exchange=EXCHANGE, exchange_type="direct", durable=True)
+        channel.exchange_declare(
+            exchange=EXCHANGE, exchange_type="direct", durable=True
+        )
         channel.queue_declare(queue=QUEUE, durable=True)
-        channel.queue_bind(queue=QUEUE, exchange=EXCHANGE, routing_key=ROUTING_KEY)
+        channel.queue_bind(
+            queue=QUEUE, exchange=EXCHANGE, routing_key=ROUTING_KEY
+        )
 
-        message = json.dumps({
-            "submission_id": submission_id,
-            "code": code,
-            "language": language,
-        })
+        message = json.dumps(
+            {
+                "submission_id": submission_id,
+                "code": code,
+                "language": language,
+            }
+        )
 
         channel.basic_publish(
             exchange=EXCHANGE,
