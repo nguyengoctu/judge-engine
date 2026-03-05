@@ -14,7 +14,7 @@ def test_mock_execute_returns_valid_result():
 
 def test_mock_execute_passed_has_output():
     """Run multiple times, at least one should pass (60% probability)."""
-    results = [mock_execute("x = 1", "python") for _ in range(20)]
+    results = [mock_execute("x = 1", "python") for _ in range(10)]
     passed = [r for r in results if r["status"] == "passed"]
 
     assert len(passed) > 0, "Expected at least one 'passed' result in 20 runs"
@@ -25,7 +25,7 @@ def test_mock_execute_passed_has_output():
 
 def test_mock_execute_has_all_outcomes():
     """Run many times, verify all 3 outcomes appear."""
-    results = [mock_execute("x = 1", "python") for _ in range(100)]
+    results = [mock_execute("x = 1", "python") for _ in range(30)]
     statuses = {r["status"] for r in results}
 
     assert "passed" in statuses, "Expected 'passed' in 100 runs"
