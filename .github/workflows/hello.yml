@@ -3,12 +3,27 @@ on:
     branches: ["master"]
   pull_request:
     branches: ["master"]
-
+  workflow_dispatch:
 jobs:
-  hello:
+  info:
     runs-on: ubuntu-latest
     steps:
-      - name: Hello
-        run: echo "Hello, World!"
-      - name: branches
-        run: echo "${{ github.ref_name }}, ${{ github.sha }}"
+      - name: Repo info
+        run: |
+          echo "Repo: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Event: ${{ github.event_name }}"
+          echo "Runner OS: ${{ runner.os }}"
+  check-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: List services
+        run: ls -la services/
+      - name: Count files
+        run: |
+          for dir in services/*/; do
+            echo "$dir: $(find $dir -type f | wc -l) files"
+          done
