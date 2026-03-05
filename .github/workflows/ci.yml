@@ -1,0 +1,163 @@
+on:
+  pull_request:
+    branches: ["master"]
+  workflow_dispatch:
+
+jobs:
+  filter-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      api-gateway: ${{ steps.filter.outputs.api-gateway }}
+      problem-service: ${{ steps.filter.outputs.problem-service }}
+      submission-service: ${{ steps.filter.outputs.submission-service }}
+      worker: ${{ steps.filter.outputs.worker }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Filter changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - "services/frontend/**"
+            api-gateway:
+              - "services/api-gateway/**"
+            problem-service:
+              - "services/problem-service/**"
+            submission-service:
+              - "services/submission-service/**"
+            worker:
+              - "services/worker/**"
+  test-worker:
+    needs: filter-changes
+    runs-on: ubuntu-latest
+    if: needs.filter-changes.outputs.worker == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          cd services/worker
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: lint worker
+        run: |
+          cd services/worker
+          flake8 app/
+      - name: Test worker
+        run: |
+          cd services/worker
+          pytest tests/
+      - name: Upload test results
+        uses: actions/upload-test-results@v4
+        with:
+          name: pytest
+          path: services/worker/pytest-results.xml
+
+  test-submission-service:
+    needs: filter-changes
+    runs-on: ubuntu-latest
+    if: needs.filter-changes.outputs.submission-service == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          cd services/submission-service
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: lint submission service
+        run: |
+          cd services/submission-service
+          flake8 app/
+      - name: Test submission service
+        run: |
+          cd services/submission-service
+          pytest tests/
+      - name: Upload test results
+        uses: actions/upload-test-results@v4
+        with:
+          name: pytest
+          path: services/submission-service/pytest-results.xml
+
+  test-problem-service:
+    needs: filter-changes
+    runs-on: ubuntu-latest
+    if: needs.filter-changes.outputs.problem-service == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up mvn
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+      - name: Install dependencies
+        run: |
+          cd services/problem-service
+          mvn verify
+      - name: Upload test results
+        uses: actions/upload-test-results@v4
+        with:
+          name: maven
+          path: services/problem-service/target/surefire-reports
+  
+  test-api-gateway:
+    needs: filter-changes
+    runs-on: ubuntu-latest
+    if: needs.filter-changes.outputs.api-gateway == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up mvn
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+      - name: Install dependencies
+        run: |
+          cd services/api-gateway
+          mvn verify
+      - name: Upload test results
+        uses: actions/upload-test-results@v4
+        with:
+          name: maven
+          path: services/api-gateway/target/surefire-reports
+    
+  test-frontend:
+    needs: filter-changes
+    runs-on: ubuntu-latest
+    if: needs.filter-changes.outputs.frontend == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: |
+          cd services/frontend
+          npm install
+      - name: Test frontend
+        run: |
+          cd services/frontend
+          npm run test
+      - name: Upload test results
+        uses: actions/upload-test-results@v4
+        with:
+          name: jest
+          path: services/frontend/coverage
+  
