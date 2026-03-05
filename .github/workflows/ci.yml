@@ -59,7 +59,7 @@ jobs:
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
-          name: pytest
+          name: worker-reports
           path: services/worker/pytest-results.xml
 
   test-submission-service:
@@ -89,7 +89,7 @@ jobs:
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
-          name: pytest
+          name: submission-service-reports
           path: services/submission-service/pytest-results.xml
 
   test-problem-service:
@@ -112,7 +112,7 @@ jobs:
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
-          name: maven
+          name: problem-service-reports
           path: services/problem-service/target/surefire-reports
   
   test-api-gateway:
@@ -135,7 +135,7 @@ jobs:
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
-          name: maven
+          name: api-gateway-reports
           path: services/api-gateway/target/surefire-reports
     
   test-frontend:
@@ -160,6 +160,6 @@ jobs:
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
-          name: jest
+          name: frontend-reports
           path: services/frontend/coverage
   
