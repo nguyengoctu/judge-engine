@@ -32,6 +32,8 @@ jobs:
               - "services/submission-service/**"
             worker:
               - "services/worker/**"
+              - "docker/runners/**"
+              
   test-worker:
     needs: filter-changes
     runs-on: ubuntu-latest
@@ -152,6 +154,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: services/frontend/package-lock.json
       - name: Install dependencies
         run: |
           cd services/frontend
@@ -165,3 +168,17 @@ jobs:
           cd services/frontend
           npm run build
   
+  docker-build-check:
+    needs: [test-worker, test-submission-service, test-problem-service, test-api-gateway, test-frontend]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api-gateway, problem-service, submission-service, worker, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t test-${{ matrix.service }} services/${{ matrix.service }}
+      - name: Build runner images
+        run: |
+          docker build -t test-runner-python -f docker/runners/Dockerfile.python docker/runners/
+          docker build -t test-runner-java -f docker/runners/Dockerfile.java docker/runners/
+          docker build -t test-runner-js -f docker/runners/Dockerfile.javascript docker/runners/
