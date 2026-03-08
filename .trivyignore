@@ -1,7 +1,12 @@
 # .trivyignore — Trivy False Positive Exclusions
 # Format: one CVE ID per line
-# Always add a comment explaining WHY the CVE is ignored
-# Review date: set a reminder to re-evaluate periodically
+# Review date: re-evaluate monthly
 
-# Example:
-# CVE-2023-XXXXX  # not applicable — feature not used in our app
+# glibc integer overflow in memalign — no fix available (Debian 13.3)
+CVE-2026-0861
+
+# jaraco.context path traversal — build tool, not used at runtime
+CVE-2026-23949
+
+# wheel privilege escalation — build tool, not used at runtime
+CVE-2026-24049
