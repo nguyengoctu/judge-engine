@@ -1,0 +1,7 @@
+# .trivyignore — Trivy False Positive Exclusions
+# Format: one CVE ID per line
+# Always add a comment explaining WHY the CVE is ignored
+# Review date: set a reminder to re-evaluate periodically
+
+# Example:
+# CVE-2023-XXXXX  # not applicable — feature not used in our app
