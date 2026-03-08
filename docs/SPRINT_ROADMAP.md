@@ -1,4 +1,4 @@
-# Online Judge — Sprint Roadmap
+  # Online Judge — Sprint Roadmap
 
 > **Goal**: Practice DevOps from local Docker Compose to AWS EKS.
 > **Strategy**: Build 3 minimal core flows first (so services actually talk to each other), then deploy through all environments.
@@ -12,9 +12,10 @@
 Sprint 0-1: Working App          Sprint 2-5: Local DevOps         Sprint 6-9: Cloud
 ┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────┐
 │ 0: Service skeletons  │    │ 2: Compose production │    │ 6: Terraform + AWS   │
-│ 1: 3 core flows       │───▶│ 3: CI/CD pipeline     │───▶│ 7: ECS Fargate       │
-│    (services wired)   │    │ 4: K8s manifests      │    │ 8: EKS               │
-│                       │    │ 5: Helm + Monitoring  │    │ 9: Prod hardening    │
+│ 1: 3 core flows       │───▶│ 3: CI/CD (GitHub Act) │───▶│ 7: ECS Fargate       │
+│    (services wired)   │    │ 3.5: CI/CD (Jenkins)  │    │ 8: EKS               │
+│                       │    │ 4: K8s manifests      │    │ 9: Prod hardening    │
+│                       │    │ 5: Helm + Monitoring  │    │                      │
 └──────────────────────┘    └──────────────────────┘    └──────────────────────┘
 ```
 
@@ -37,7 +38,8 @@ Sprint 0-1: Working App          Sprint 2-5: Local DevOps         Sprint 6-9: Cl
 | 1 ✅ | 🟢 Local | 3 core flows | Service integration, async messaging, DB migrations |
 | 2 ✅ | 🟢 Local | Docker Compose production | Networking, NGINX proxy, logging, env management |
 | 2.5 ✅ | 🟢 Local | Docker Sandbox Executor | Docker-in-Docker, container isolation, resource limits, security |
-| 3 | 🟢 Local | CI/CD pipeline | GitHub Actions, SonarQube, Trivy, Dependabot |
+| 3 | 🟢 Local | CI/CD pipeline (GitHub Actions) | GitHub Actions, SonarCloud, Trivy, Dependabot |
+| 3.5 | 🟢 Local | CI/CD pipeline (Jenkins) | Jenkins, Jenkinsfile, Webhook, OWASP Dependency-Check |
 | 4 | 🔵 K8s | Kubernetes basics | Manifests, Deployments, Services, ConfigMaps, kubectl |
 | 5 | 🔵 K8s | Helm + Monitoring | Helm charts, Prometheus, Grafana, HPA, load testing |
 | 6 | 🟠 AWS | Terraform + AWS | IaC modules, VPC, ECR, RDS, ElastiCache, SQS |
