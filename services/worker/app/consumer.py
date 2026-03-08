@@ -17,7 +17,7 @@ _db_user = os.getenv("DB_USER", "postgres")
 _db_pass = os.getenv("DB_PASSWORD", "postgres")
 _db_host = os.getenv("DB_HOST", "localhost")
 _db_port = os.getenv("DB_PORT", "5432")
-_db_name = os.getenv("DB_NAME", "submissiondb")
+_db_name = os.getenv("DB_NAME", "judgedb")
 
 DB_URL = (
     f"postgresql://{_db_user}:{_db_pass}"
@@ -31,9 +31,11 @@ def _get_executor():
     """Get the appropriate executor function based on EXECUTOR_MODE."""
     if EXECUTOR_MODE == "docker":
         from app.executor.docker_executor import docker_execute
+
         return docker_execute
     else:
         from app.executor.mock_executor import mock_execute
+
         return mock_execute
 
 
@@ -74,8 +76,10 @@ def on_message(channel, method, properties, body):
         code = message["code"]
         language = message["language"]
 
-        logger.info(f"Processing submission {submission_id}, "
-                    f"language={language}, executor={EXECUTOR_MODE}")
+        logger.info(
+            f"Processing submission {submission_id}, "
+            f"language={language}, executor={EXECUTOR_MODE}"
+        )
 
         # Update status to running
         update_submission(submission_id, "running", {}, 0, 0)
