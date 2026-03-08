@@ -58,7 +58,7 @@ jobs:
       - name: Test worker
         run: |
           cd services/worker
-          pytest tests/
+          pytest --cov=app --cov-report=xml:coverage.xml tests/
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
@@ -103,7 +103,7 @@ jobs:
       - name: Test submission service
         run: |
           cd services/submission-service
-          pytest tests/
+          pytest --cov=app --cov-report=xml:coverage.xml tests/
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
@@ -217,3 +217,18 @@ jobs:
           push: false
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
+
+  sonarcloud:
+    needs: [test-api-gateway, test-problem-service, test-submission-service, test-worker, test-frontend]
+    if: always() && !failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

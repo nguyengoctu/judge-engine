@@ -15,7 +15,7 @@
 | **Path Filters** | Only build/test changed services | Monorepo efficiency |
 | **Docker Image Tags** | Git SHA tags, semantic versioning | Know which version is deployed |
 | **Container Scanning** | Trivy vulnerability scanning | Catch CVEs before production |
-| **SonarQube** | Code quality, static analysis, test coverage, code smells | Quality gates block bad code |
+| **SonarCloud** | Code quality, static analysis, test coverage, code smells | Quality gates block bad code |
 | **Branch Protection** | Required checks, review rules | Prevent broken merges |
 
 ---
@@ -39,11 +39,12 @@
 
 - [ ] Protect `main`, require CI pass
 
-### SonarQube
+### SonarCloud
 
-- [ ] Add SonarQube container to Docker Compose (Community Edition, self-hosted)
-- [ ] Configure sonar-project.properties for Java and Python services
-- [ ] Add SonarQube scan step in CI workflow (after tests, before build)
+- [ ] Create SonarCloud account (sonarcloud.io) and import GitHub project
+- [ ] Generate token and store in GitHub Secrets (`SONAR_TOKEN`, `SONAR_ORGANIZATION`)
+- [ ] Configure `sonar-project.properties` for Java and Python services
+- [ ] Add SonarCloud scan step in CI workflow (after tests, before build)
 - [ ] Set quality gate: no new bugs, no new vulnerabilities, coverage >= 70%
 - [ ] Block PR merge if quality gate fails
 

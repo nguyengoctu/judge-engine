@@ -41,5 +41,4 @@ docker/data/
 Thumbs.db
 
 # tmp md
-docs/sprint-*/
-docs/portfolio/
+docs/tmp
