@@ -251,11 +251,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Download all build artifacts
+      - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          pattern: '*-{build,coverage}'
-          merge-multiple: false
+          pattern: '*-build'
+        continue-on-error: true
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-coverage'
+        continue-on-error: true
       - name: Restore artifacts to source tree
         run: |
           # Java builds
@@ -264,6 +269,9 @@ jobs:
           # Python coverage
           cp worker-coverage/coverage.xml services/worker/ 2>/dev/null || true
           cp submission-service-coverage/coverage.xml services/submission-service/ 2>/dev/null || true
+          # Fallback: create empty dirs so sonar.java.binaries doesn't fail
+          mkdir -p services/problem-service/target/classes
+          mkdir -p services/api-gateway/target/classes
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
