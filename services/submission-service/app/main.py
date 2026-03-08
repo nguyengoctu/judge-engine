@@ -1,8 +1,5 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from sqlalchemy import text
-
-from app.database import engine, Base
 from app.routes import health
 from app.routes import submissions
 from app.routes import queue_status
@@ -13,10 +10,7 @@ from app.models import submission  # noqa: F401
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create tables on startup if they don't exist."""
-    with engine.begin() as conn:
-        conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'))
-        Base.metadata.create_all(bind=engine)
+    """Flyway (problem-service) manages schema creation."""
     yield
 
 
@@ -33,18 +27,12 @@ app = FastAPI(
         "name": "Online Judge Team",
     },
     openapi_tags=[
-        {
-            "name": "Health",
-            "description": "Service health checks"
-        },
+        {"name": "Health", "description": "Service health checks"},
         {
             "name": "Submissions",
             "description": "Code submission and execution"
         },
-        {
-            "name": "Queue",
-            "description": "Queue monitoring"
-        },
+        {"name": "Queue", "description": "Queue monitoring"},
     ],
 )
 

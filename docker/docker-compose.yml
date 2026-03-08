@@ -1,33 +1,16 @@
 services:
-  # ───────────────── Databases ─────────────────
-  problem-db:
+  # ───────────────── Database ─────────────────
+  judge-db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${PROBLEM_DB_NAME:-problemdb}
+      POSTGRES_DB: ${DB_NAME:-judgedb}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports: []
     networks:
       - backend-net
     volumes:
-      - problem-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  submission-db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: ${SUBMISSION_DB_NAME:-submissiondb}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-    ports: []
-    networks:
-      - backend-net
-    volumes:
-      - submission-db-data:/var/lib/postgresql/data
+      - judge-db-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -97,13 +80,13 @@ services:
     networks:
       - backend-net
     environment:
-      DB_HOST: ${PROBLEM_DB_HOST:-problem-db}
-      DB_PORT: ${PROBLEM_DB_PORT:-5432}
-      DB_NAME: ${PROBLEM_DB_NAME:-problemdb}
+      DB_HOST: ${DB_HOST:-judge-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-judgedb}
       DB_USER: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     depends_on:
-      problem-db:
+      judge-db:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8081/health"]
@@ -120,9 +103,9 @@ services:
     networks:
       - backend-net
     environment:
-      DB_HOST: ${SUBMISSION_DB_HOST:-submission-db}
-      DB_PORT: ${SUBMISSION_DB_PORT:-5432}
-      DB_NAME: ${SUBMISSION_DB_NAME:-submissiondb}
+      DB_HOST: ${DB_HOST:-judge-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-judgedb}
       DB_USER: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       REDIS_HOST: ${REDIS_HOST:-redis}
@@ -130,7 +113,7 @@ services:
       RABBITMQ_HOST: ${RABBITMQ_HOST:-rabbitmq}
       RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
     depends_on:
-      submission-db:
+      judge-db:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -152,9 +135,9 @@ services:
     environment:
       RABBITMQ_HOST: ${RABBITMQ_HOST:-rabbitmq}
       RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
-      DB_HOST: ${SUBMISSION_DB_HOST:-submission-db}
-      DB_PORT: ${SUBMISSION_DB_PORT:-5432}
-      DB_NAME: ${SUBMISSION_DB_NAME:-submissiondb}
+      DB_HOST: ${DB_HOST:-judge-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-judgedb}
       DB_USER: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       REDIS_HOST: ${REDIS_HOST:-redis}
@@ -169,7 +152,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      submission-db:
+      judge-db:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8083/health')"]
@@ -234,8 +217,7 @@ services:
     profiles: ["build"]
 
 volumes:
-  problem-db-data:
-  submission-db-data:
+  judge-db-data:
   redis-data:
   rabbitmq-data:
 
@@ -244,3 +226,4 @@ networks:
     driver: bridge
   backend-net:
     driver: bridge
+
