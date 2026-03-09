@@ -75,7 +75,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Build worker image
         id: build-worker
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: services/worker
           load: true
@@ -180,7 +180,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Build submission-service image
         id: build-submission
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: services/submission-service
           load: true
@@ -250,7 +250,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Build problem-service image
         id: build-problem
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: services/problem-service
           load: true
@@ -320,7 +320,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Build api-gateway image
         id: build-api-gateway
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: services/api-gateway
           load: true
@@ -386,7 +386,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Build frontend image
         id: build-frontend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: services/frontend
           load: true
