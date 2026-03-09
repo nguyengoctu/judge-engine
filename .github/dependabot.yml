@@ -1,0 +1,63 @@
+version: 2
+updates:
+  # Python (pip)
+  - package-ecosystem: "pip"
+    directory: "/services/worker"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "python"
+
+  - package-ecosystem: "pip"
+    directory: "/services/submission-service"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "python"
+
+  # Java (Maven)
+  - package-ecosystem: "maven"
+    directory: "/services/problem-service"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "java"
+
+  - package-ecosystem: "maven"
+    directory: "/services/api-gateway"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "java"
+
+  # Node (npm)
+  - package-ecosystem: "npm"
+    directory: "/services/frontend"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "javascript"
+
+  # Docker
+  - package-ecosystem: "docker"
+    directory: "/services/worker"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "ci"
+      
