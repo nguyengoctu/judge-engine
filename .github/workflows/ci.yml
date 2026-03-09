@@ -75,14 +75,68 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: services/worker
+          load: true
           push: false
+          tags: worker:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
           cache-from: type=gha,scope=worker
           cache-to: type=gha,scope=worker,mode=max
       - name: Build runner images
         run: |
-          docker build -t test-runner-python -f docker/runners/Dockerfile.python docker/runners/
-          docker build -t test-runner-java -f docker/runners/Dockerfile.java docker/runners/
-          docker build -t test-runner-js -f docker/runners/Dockerfile.javascript docker/runners/
+          docker build -t runner-python:${{ github.sha }} -f docker/runners/Dockerfile.python docker/runners/
+          docker build -t runner-java:${{ github.sha }} -f docker/runners/Dockerfile.java docker/runners/
+          docker build -t runner-js:${{ github.sha }} -f docker/runners/Dockerfile.javascript docker/runners/
+      # ── Trivy Container Scanning ──
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db
+          restore-keys: trivy-db
+      - name: Trivy scan — worker
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: worker:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          format: table
+      - name: Trivy scan — runner-python
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: runner-python:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          format: table
+      - name: Trivy scan — runner-java
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: runner-java:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          format: table
+      - name: Trivy scan — runner-js
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: runner-js:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          format: table
+      - name: Trivy SARIF report — worker
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: worker:${{ github.sha }}
+          format: sarif
+          output: trivy-worker.sarif
+      - name: Upload Trivy report — worker
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-worker
+          path: trivy-worker.sarif
+          retention-days: 7
 
   test-submission-service:
     needs: filter-changes
@@ -125,9 +179,39 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: services/submission-service
+          load: true
           push: false
+          tags: submission-service:${{ github.sha }}
           cache-from: type=gha,scope=submission-service
           cache-to: type=gha,scope=submission-service,mode=max
+      # ── Trivy Container Scanning ──
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db
+          restore-keys: trivy-db
+      - name: Trivy scan — submission-service
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: submission-service:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          format: table
+      - name: Trivy SARIF report — submission-service
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: submission-service:${{ github.sha }}
+          format: sarif
+          output: trivy-submission-service.sarif
+      - name: Upload Trivy report — submission-service
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-submission-service
+          path: trivy-submission-service.sarif
+          retention-days: 7
 
   test-problem-service:
     needs: filter-changes
@@ -164,9 +248,39 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: services/problem-service
+          load: true
           push: false
+          tags: problem-service:${{ github.sha }}
           cache-from: type=gha,scope=problem-service
           cache-to: type=gha,scope=problem-service,mode=max
+      # ── Trivy Container Scanning ──
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db
+          restore-keys: trivy-db
+      - name: Trivy scan — problem-service
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: problem-service:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          format: table
+      - name: Trivy SARIF report — problem-service
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: problem-service:${{ github.sha }}
+          format: sarif
+          output: trivy-problem-service.sarif
+      - name: Upload Trivy report — problem-service
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-problem-service
+          path: trivy-problem-service.sarif
+          retention-days: 7
   
   test-api-gateway:
     needs: filter-changes
@@ -203,9 +317,39 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: services/api-gateway
+          load: true
           push: false
+          tags: api-gateway:${{ github.sha }}
           cache-from: type=gha,scope=api-gateway
           cache-to: type=gha,scope=api-gateway,mode=max
+      # ── Trivy Container Scanning ──
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db
+          restore-keys: trivy-db
+      - name: Trivy scan — api-gateway
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: api-gateway:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          format: table
+      - name: Trivy SARIF report — api-gateway
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: api-gateway:${{ github.sha }}
+          format: sarif
+          output: trivy-api-gateway.sarif
+      - name: Upload Trivy report — api-gateway
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-api-gateway
+          path: trivy-api-gateway.sarif
+          retention-days: 7
     
   test-frontend:
     needs: filter-changes
@@ -238,9 +382,39 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: services/frontend
+          load: true
           push: false
+          tags: frontend:${{ github.sha }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
+      # ── Trivy Container Scanning ──
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db
+          restore-keys: trivy-db
+      - name: Trivy scan — frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: frontend:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: 1
+          format: table
+      - name: Trivy SARIF report — frontend
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: frontend:${{ github.sha }}
+          format: sarif
+          output: trivy-frontend.sarif
+      - name: Upload Trivy report — frontend
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-frontend
+          path: trivy-frontend.sarif
+          retention-days: 7
 
   sonarcloud:
     needs: [test-api-gateway, test-problem-service, test-submission-service, test-worker, test-frontend]

@@ -1,4 +1,4 @@
 FROM node:20-alpine
-RUN adduser -D runner
+RUN apk upgrade --no-cache && adduser -D runner
 USER runner
 WORKDIR /code
