@@ -1,3 +1,5 @@
+name: CI
+
 on:
   pull_request:
     branches: ["master"]
@@ -451,3 +453,42 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  
+  push-images:
+    needs: [test-worker, test-submission-service, test-problem-service, test-api-gateway, test-frontend]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - service: worker
+            context: services/worker
+          - service: submission-service
+            context: services/submission-service
+          - service: problem-service
+            context: services/problem-service
+          - service: api-gateway
+            context: services/api-gateway
+          - service: frontend
+            context: services/frontend
+    steps:
+    - uses: actions/checkout@v4
+    - uses: docker/setup-buildx-action@v3
+    - name: Login to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ matrix.context }}
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository }}/${{ matrix.service }}:${{ github.sha }}
+          ghcr.io/${{ github.repository }}/${{ matrix.service }}:latest
+        cache-from: type=gha,scope=${{ matrix.service }}
