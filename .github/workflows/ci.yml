@@ -74,6 +74,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build worker image
+        id: build-worker
         uses: docker/build-push-action@v5
         with:
           context: services/worker
@@ -127,14 +128,14 @@ jobs:
           format: table
       - name: Trivy SARIF report — worker
         uses: aquasecurity/trivy-action@master
-        if: always()
+        if: always() && steps.build-worker.outcome == 'success'
         with:
           image-ref: worker:${{ github.sha }}
           format: sarif
           output: trivy-worker.sarif
       - name: Upload Trivy report — worker
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.build-worker.outcome == 'success'
         with:
           name: trivy-worker
           path: trivy-worker.sarif
@@ -178,6 +179,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build submission-service image
+        id: build-submission
         uses: docker/build-push-action@v5
         with:
           context: services/submission-service
@@ -202,14 +204,14 @@ jobs:
           format: table
       - name: Trivy SARIF report — submission-service
         uses: aquasecurity/trivy-action@master
-        if: always()
+        if: always() && steps.build-submission.outcome == 'success'
         with:
           image-ref: submission-service:${{ github.sha }}
           format: sarif
           output: trivy-submission-service.sarif
       - name: Upload Trivy report — submission-service
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.build-submission.outcome == 'success'
         with:
           name: trivy-submission-service
           path: trivy-submission-service.sarif
@@ -247,6 +249,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build problem-service image
+        id: build-problem
         uses: docker/build-push-action@v5
         with:
           context: services/problem-service
@@ -271,14 +274,14 @@ jobs:
           format: table
       - name: Trivy SARIF report — problem-service
         uses: aquasecurity/trivy-action@master
-        if: always()
+        if: always() && steps.build-problem.outcome == 'success'
         with:
           image-ref: problem-service:${{ github.sha }}
           format: sarif
           output: trivy-problem-service.sarif
       - name: Upload Trivy report — problem-service
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.build-problem.outcome == 'success'
         with:
           name: trivy-problem-service
           path: trivy-problem-service.sarif
@@ -316,6 +319,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build api-gateway image
+        id: build-api-gateway
         uses: docker/build-push-action@v5
         with:
           context: services/api-gateway
@@ -340,14 +344,14 @@ jobs:
           format: table
       - name: Trivy SARIF report — api-gateway
         uses: aquasecurity/trivy-action@master
-        if: always()
+        if: always() && steps.build-api-gateway.outcome == 'success'
         with:
           image-ref: api-gateway:${{ github.sha }}
           format: sarif
           output: trivy-api-gateway.sarif
       - name: Upload Trivy report — api-gateway
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.build-api-gateway.outcome == 'success'
         with:
           name: trivy-api-gateway
           path: trivy-api-gateway.sarif
@@ -381,6 +385,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build frontend image
+        id: build-frontend
         uses: docker/build-push-action@v5
         with:
           context: services/frontend
@@ -405,14 +410,14 @@ jobs:
           format: table
       - name: Trivy SARIF report — frontend
         uses: aquasecurity/trivy-action@master
-        if: always()
+        if: always() && steps.build-frontend.outcome == 'success'
         with:
           image-ref: frontend:${{ github.sha }}
           format: sarif
           output: trivy-frontend.sarif
       - name: Upload Trivy report — frontend
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.build-frontend.outcome == 'success'
         with:
           name: trivy-frontend
           path: trivy-frontend.sarif
