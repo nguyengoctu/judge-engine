@@ -61,11 +61,6 @@ jobs:
         run: |
           cd services/worker
           pytest --cov=app --cov-report=xml:coverage.xml tests/
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        with:
-          name: worker-reports
-          path: services/worker/pytest-results.xml
       - name: Upload coverage for SonarCloud
         uses: actions/upload-artifact@v4
         with:
@@ -166,11 +161,6 @@ jobs:
         run: |
           cd services/submission-service
           pytest --cov=app --cov-report=xml:coverage.xml tests/
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        with:
-          name: submission-service-reports
-          path: services/submission-service/pytest-results.xml
       - name: Upload coverage for SonarCloud
         uses: actions/upload-artifact@v4
         with:

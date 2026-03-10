@@ -8,6 +8,7 @@ updates:
     labels:
       - "dependencies"
       - "python"
+    open-pull-requests-limit: 1
 
   - package-ecosystem: "pip"
     directory: "/services/submission-service"
@@ -16,6 +17,7 @@ updates:
     labels:
       - "dependencies"
       - "python"
+    open-pull-requests-limit: 1
 
   # Java (Maven)
   - package-ecosystem: "maven"
@@ -25,6 +27,7 @@ updates:
     labels:
       - "dependencies"
       - "java"
+    open-pull-requests-limit: 1
 
   - package-ecosystem: "maven"
     directory: "/services/api-gateway"
@@ -33,6 +36,7 @@ updates:
     labels:
       - "dependencies"
       - "java"
+    open-pull-requests-limit: 1
 
   # Node (npm)
   - package-ecosystem: "npm"
@@ -42,6 +46,7 @@ updates:
     labels:
       - "dependencies"
       - "javascript"
+    open-pull-requests-limit: 1
 
   # Docker
   - package-ecosystem: "docker"
@@ -51,7 +56,8 @@ updates:
     labels:
       - "dependencies"
       - "docker"
-
+    open-pull-requests-limit: 1
+  
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -60,4 +66,4 @@ updates:
     labels:
       - "dependencies"
       - "ci"
-      
+    open-pull-requests-limit: 1
