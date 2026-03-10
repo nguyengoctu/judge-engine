@@ -415,7 +415,7 @@ jobs:
 
   sonarcloud:
     needs: [test-api-gateway, test-problem-service, test-submission-service, test-worker, test-frontend]
-    if: always() && !failure()
+    if: always() && !failure() && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
