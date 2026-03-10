@@ -17,50 +17,62 @@
 | **Container Scanning** | Trivy vulnerability scanning | Catch CVEs before production |
 | **SonarCloud** | Code quality, static analysis, test coverage, code smells | Quality gates block bad code |
 | **Branch Protection** | Required checks, review rules | Prevent broken merges |
+| **Dependabot** | Dependency vulnerability scanning, auto-PR | Keep dependencies secure |
 
 ---
 
 ## Tasks
 
-### CI Workflow (`ci.yml` — on PR)
+### CI Workflow (`ci.yml` — on PR + push master)
 
-- [ ] Detect changed services (path filters)
-- [ ] Per service: lint → test → build Docker image → Trivy scan
-- [ ] Post results as PR comment
-- [ ] Block merge on failure
+- [x] Detect changed services (path filters via `dorny/paths-filter`)
+- [x] Per service: lint → test → build Docker image → Trivy scan
+- [x] SonarCloud scan (after tests, skips Dependabot PRs)
+- [x] Trivy SARIF reports with conditional execution
+- [x] GHA build cache per service
 
-### CD Workflow (`cd.yml` — on merge to main)
+### CD Workflow (`cd.yml` — on tag push)
 
-- [ ] Build images for changed services
-- [ ] Tag with `<service>:<git-sha>` and `:latest`
-- [ ] Push to container registry
+- [x] Trigger on `v*` tags only (not on every push to master)
+- [x] Build images for all services (matrix strategy)
+- [x] Tag with `<service>:<version>` and `:latest`
+- [x] Push to GHCR (GitHub Container Registry)
 
 ### Branch Protection
 
-- [ ] Protect `main`, require CI pass
+- [x] Protect `master`, require CI status checks to pass
+- [x] Required checks: `test-worker`, `test-submission-service`, `test-problem-service`, `test-api-gateway`, `test-frontend`
 
 ### SonarCloud
 
-- [ ] Create SonarCloud account (sonarcloud.io) and import GitHub project
-- [ ] Generate token and store in GitHub Secrets (`SONAR_TOKEN`, `SONAR_ORGANIZATION`)
-- [ ] Configure `sonar-project.properties` for Java and Python services
-- [ ] Add SonarCloud scan step in CI workflow (after tests, before build)
-- [ ] Set quality gate: no new bugs, no new vulnerabilities, coverage >= 70%
-- [ ] Block PR merge if quality gate fails
+- [x] Configure `sonar-project.properties` for Java and Python services
+- [x] Add SonarCloud scan step in CI workflow (after tests)
+- [x] Skip SonarCloud for Dependabot PRs (no access to secrets)
+
+### Container Scanning (Trivy)
+
+- [x] Trivy scan all Docker images (worker, runners, submission-service, problem-service, api-gateway, frontend)
+- [x] CRITICAL/HIGH severity gate (exit-code: 1)
+- [x] Trivy DB caching
+- [x] `.trivyignore` for managing false positives
+- [x] SARIF report generation (conditional on build success)
 
 ### Dependabot
 
-- [ ] Enable Dependabot for dependency vulnerability scanning
-- [ ] Configure `.github/dependabot.yml` for Maven, pip, npm
-- [ ] Auto-create PRs for vulnerable dependencies
-- [ ] Dependabot alerts visible in GitHub Security tab
+- [x] Configure `.github/dependabot.yml` for pip, Maven, npm, Docker, GitHub Actions
+- [x] Weekly scan schedule
+- [x] Labels per ecosystem
+- [x] `open-pull-requests-limit: 1` per ecosystem
+- [x] Dependabot alerts visible in GitHub Security tab
 
 ---
 
 ## Checklist
 
-- [ ] CI runs on every PR
-- [ ] Only changed services tested (path filters)
-- [ ] Trivy scan passes
-- [ ] CD pushes tagged images on merge
-- [ ] Branch protection on `main`
+- [x] CI runs on every PR
+- [x] CI runs on every push to master
+- [x] Only changed services tested (path filters)
+- [x] Trivy scan passes
+- [x] CD pushes tagged images on tag push
+- [x] Branch protection on `master`
+- [x] Dependabot configured for all ecosystems
