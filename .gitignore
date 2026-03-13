@@ -28,6 +28,7 @@ docker/data/
 .env
 .env.prod
 *.env.local
+secrets.yml
 
 # IDE
 .vscode/

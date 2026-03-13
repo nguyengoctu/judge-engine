@@ -64,3 +64,35 @@ health:
 	@echo "=== NGINX ===";              curl -sf http://localhost/nginx-health | python3 -m json.tool 2>/dev/null || echo "UNREACHABLE"
 	@echo "=== API via NGINX ===";      curl -sf http://localhost/api/problems | head -c 100 || echo "UNREACHABLE"
 	@echo "=== Frontend via NGINX ==="; curl -sfI http://localhost/ | head -1 || echo "UNREACHABLE"
+
+# kind
+k8s-cluster:
+	kind create cluster --name judge-engine --config k8s/kind-config.yml
+	docker build -t api-gateway:latest ./services/api-gateway
+	docker build -t problem-service:latest ./services/problem-service
+	docker build -t submission-service:latest ./services/submission-service
+	docker build -t worker:latest ./services/worker
+	docker build -t frontend:latest ./frontend
+	kind load docker-image api-gateway:latest --name judge-engine
+	kind load docker-image problem-service:latest --name judge-engine
+	kind load docker-image submission-service:latest --name judge-engine
+	kind load docker-image worker:latest --name judge-engine
+	kind load docker-image frontend:latest --name judge-engine
+	kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
+	kubectl wait --namespace ingress-nginx \
+		--for=condition=ready pod \
+		--selector=app.kubernetes.io/component=controller \
+		--timeout=120s
+k8s-delete:
+	kind delete cluster --name judge-engine
+k8s-load-images:
+	docker build -t api-gateway:latest ./services/api-gateway
+	docker build -t problem-service:latest ./services/problem-service
+	docker build -t submission-service:latest ./services/submission-service
+	docker build -t worker:latest ./services/worker
+	docker build -t frontend:latest ./services/frontend
+	kind load docker-image api-gateway:latest --name judge-engine
+	kind load docker-image problem-service:latest --name judge-engine
+	kind load docker-image submission-service:latest --name judge-engine
+	kind load docker-image worker:latest --name judge-engine
+	kind load docker-image frontend:latest --name judge-engine
