@@ -8,6 +8,8 @@ data:
   DB_HOST: judge-db
   DB_PORT: "5432"
   DB_NAME: judgedb
+
+  POSTGRES_DB: judgedb
   
   # Redis
   REDIS_HOST: redis

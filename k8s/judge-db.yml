@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: judge-db
+  namespace: judge-engine
+  labels:
+    app: judge-db
+spec:
+  serviceName: judge-db
+  selector:
+    matchLabels:
+      app: judge-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: judge-db
+    spec:
+      containers:
+        - name: judge-db
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: judge-engine-config
+            - secretRef:
+                name: judge-engine-secret
+          volumeMounts:
+            - name: judge-db-storage
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: judge-db-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: judge-db
+  namespace: judge-engine
+  labels:
+    app: judge-db
+spec:
+  selector:
+    app: judge-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+  clusterIP: None
+
