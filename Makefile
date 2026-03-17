@@ -1,4 +1,5 @@
-.PHONY: dev dev-detached stop clean build test test-java test-python test-frontend status logs health build-runners
+.PHONY: dev dev-detached stop clean build test test-java test-python test-frontend status logs health build-runners \
+	k8s-cluster k8s-delete k8s-load-images k8s-deploy k8s-fix-ingress k8s-status k8s-logs k8s-health
 
 # ─── Runner Images (sandbox) ───
 build-runners:
@@ -64,3 +65,124 @@ health:
 	@echo "=== NGINX ===";              curl -sf http://localhost/nginx-health | python3 -m json.tool 2>/dev/null || echo "UNREACHABLE"
 	@echo "=== API via NGINX ===";      curl -sf http://localhost/api/problems | head -c 100 || echo "UNREACHABLE"
 	@echo "=== Frontend via NGINX ==="; curl -sfI http://localhost/ | head -1 || echo "UNREACHABLE"
+
+.PHONY: k8s-cluster k8s-delete k8s-load-images k8s-deploy k8s-fix-ingress k8s-status k8s-logs k8s-health
+
+# ─── Kind Cluster ───
+k8s-cluster:
+	kind create cluster --name judge-engine --config k8s/kind-config.yml
+	kubectl apply -f https://kind.sigs.k8s.io/examples/ingress/deploy-ingress-nginx.yaml
+	kubectl wait --namespace ingress-nginx \
+		--for=condition=ready pod \
+		--selector=app.kubernetes.io/component=controller \
+		--timeout=120s
+	$(MAKE) k8s-fix-ingress
+
+k8s-clean:
+	@echo "Deleting app resources (keeping cluster)..."
+	-kubectl delete -f k8s/ingress.yml
+	-kubectl delete -f k8s/frontend.yml
+	-kubectl delete -f k8s/worker.yml
+	-kubectl delete -f k8s/submission-service.yml
+	-kubectl delete -f k8s/problem-service.yml
+	-kubectl delete -f k8s/api-gateway.yml
+	-kubectl delete -f k8s/redis.yml
+	-kubectl delete -f k8s/rabbitmq.yml
+	-kubectl delete -f k8s/judge-db.yml
+	-kubectl delete -f k8s/secrets.yml
+	-kubectl delete -f k8s/configMap.yml
+	@echo "Resources deleted. Cluster still running."
+
+k8s-delete:
+	kind delete cluster --name judge-engine
+
+# ─── Build & Load Images ───
+k8s-load-images:
+	docker build -t api-gateway:latest ./services/api-gateway
+	docker build -t problem-service:latest ./services/problem-service
+	docker build -t submission-service:latest ./services/submission-service
+	docker build -t worker:latest ./services/worker
+	docker build -t frontend:latest ./services/frontend
+	kind load docker-image api-gateway:latest --name judge-engine
+	kind load docker-image problem-service:latest --name judge-engine
+	kind load docker-image submission-service:latest --name judge-engine
+	kind load docker-image worker:latest --name judge-engine
+	kind load docker-image frontend:latest --name judge-engine
+
+# ─── Fix Ingress Controller → control-plane node ───
+k8s-fix-ingress:
+	kubectl patch deployment ingress-nginx-controller -n ingress-nginx \
+		-p '{"spec":{"template":{"spec":{"nodeSelector":{"ingress-ready":"true"},"tolerations":[{"key":"node-role.kubernetes.io/control-plane","operator":"Equal","effect":"NoSchedule"}]}}}}'
+	@echo "Waiting for ingress controller to be ready..."
+	kubectl wait --namespace ingress-nginx \
+		--for=condition=ready pod \
+		--selector=app.kubernetes.io/component=controller \
+		--timeout=120s
+
+# ─── One-Command Full Deploy ───
+k8s-deploy:
+	@echo "╔══════════════════════════════════════════╗"
+	@echo "║  Judge Engine — K8s Deploy          	  ║"
+	@echo "╚══════════════════════════════════════════╝"
+
+	@echo "\n── 1/3 Build & Load images ──"
+	$(MAKE) k8s-load-images
+
+	@echo "\n── 2/3 Applying config + deploying infra ──"
+	kubectl apply -f k8s/namespace.yml
+	kubectl config set-context --current --namespace=judge-engine
+	kubectl apply -f k8s/configMap.yml
+	kubectl apply -f k8s/secrets.yml
+
+	@echo "Deploying infra (DB, RabbitMQ, Redis)..."
+	kubectl apply -f k8s/judge-db.yml
+	kubectl apply -f k8s/rabbitmq.yml
+	kubectl apply -f k8s/redis.yml
+	@echo "Waiting for infra pods to be created..."
+	@sleep 5
+	kubectl wait --for=condition=ready pod -l app=judge-db --timeout=120s
+	kubectl wait --for=condition=ready pod -l app=rabbitmq --timeout=120s
+	kubectl wait --for=condition=ready pod -l app=redis --timeout=120s
+	@echo "Infra ready ✅"
+
+	@echo "\n── 3/3 Deploying app services ──"
+	kubectl apply -f k8s/api-gateway.yml
+	kubectl apply -f k8s/problem-service.yml
+	kubectl apply -f k8s/submission-service.yml
+	kubectl apply -f k8s/worker.yml
+	kubectl apply -f k8s/frontend.yml
+	kubectl apply -f k8s/ingress.yml
+	@echo "Waiting for app services to be ready..."
+	@sleep 5
+	kubectl wait --for=condition=ready pod -l app=api-gateway --timeout=120s
+	kubectl wait --for=condition=ready pod -l app=frontend --timeout=120s
+	kubectl wait --for=condition=ready pod -l app=problem-service --timeout=180s
+	kubectl wait --for=condition=ready pod -l app=submission-service --timeout=120s
+
+	@echo "✅ Deploy complete"
+	@echo "→ http://localhost"
+	@echo "→ make k8s-status"
+	@echo "→ make k8s-health"
+
+# ─── Status & Monitoring ───
+k8s-status:
+	@echo "=== Pods ==="
+	kubectl get pods -o wide
+	@echo "\n=== Services ==="
+	kubectl get svc
+	@echo "\n=== Ingress ==="
+	kubectl get ingress
+	@echo "\n=== PVCs ==="
+	kubectl get pvc
+
+k8s-logs:
+	@echo "Usage: kubectl logs deployment/<name>"
+	@echo "  api-gateway | problem-service | submission-service | worker | frontend"
+
+k8s-health:
+	@echo "=== Pod Readiness ==="
+	@kubectl get pods --no-headers | awk '{printf "%-40s %s\n", $$1, $$2}'
+	@echo "\n=== Ingress Health ==="
+	@printf "Frontend:        "; curl -sf http://localhost/ -o /dev/null -w "HTTP %{http_code}\n" 2>/dev/null || echo "UNREACHABLE"
+	@printf "API Problems:    "; curl -sf http://localhost/api/problems -o /dev/null -w "HTTP %{http_code}\n" 2>/dev/null || echo "UNREACHABLE"
+	@printf "API Submissions: "; curl -sf http://localhost/api/queue/status -o /dev/null -w "HTTP %{http_code}\n" 2>/dev/null || echo "UNREACHABLE"

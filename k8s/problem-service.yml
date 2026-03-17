@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: problem-service
+  namespace: judge-engine
+  labels:
+    app: problem-service
+spec:
+  selector:
+    matchLabels:
+      app: problem-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: problem-service
+    spec:
+      containers:
+        - name: problem-service
+          image: problem-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8081
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          envFrom:
+            - configMapRef:
+                name: judge-engine-config
+            - secretRef:
+                name: judge-engine-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: problem-service
+  namespace: judge-engine
+  labels:
+    app: problem-service
+spec:
+  selector:
+    app: problem-service
+  ports:
+    - port: 8081
+      targetPort: 8081
+  type: ClusterIP
