@@ -19,6 +19,7 @@ spec:
       initContainers:
         - name: build-runners
           image: docker:cli
+          restartPolicy: Always
           env:
             - name: DOCKER_HOST
               value: tcp://localhost:2375
@@ -57,7 +58,9 @@ spec:
 
               echo "All runner images built!"
               docker images | grep judge-runner
-          restartPolicy: Always
+
+              echo "Sidecar staying alive..."
+              sleep infinity
       containers:
         # Worker app
         - name: worker
