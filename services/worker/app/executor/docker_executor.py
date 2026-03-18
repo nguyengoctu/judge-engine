@@ -44,8 +44,23 @@ SANDBOX_PIDS_LIMIT = int(os.getenv("SANDBOX_PIDS_LIMIT", "50"))
 
 
 def get_docker_client():
-    """Get Docker client connected via socket."""
-    return docker.from_env()
+    """Get Docker client connected via socket. Retries for DinD sidecar."""
+    import time
+
+    max_retries = 30
+    for attempt in range(max_retries):
+        try:
+            client = docker.from_env()
+            if attempt > 0:
+                logger.info(
+                    f"Docker daemon connected after {attempt}s"
+                )
+            return client
+        except docker.errors.DockerException:
+            if attempt < max_retries - 1:
+                time.sleep(1)
+            else:
+                raise
 
 
 def _make_tar(filename: str, code: str) -> bytes:
