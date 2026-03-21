@@ -1,4 +1,4 @@
-  # Judge Engine — Sprint Roadmap
+# Judge Engine — Sprint Roadmap
 
 > **Goal**: Practice DevOps from local Docker Compose to AWS EKS.
 > **Strategy**: Build 3 minimal core flows first (so services actually talk to each other), then deploy through all environments.
@@ -9,14 +9,15 @@
 ## Strategy: Core Flows → DevOps Pipeline
 
 ```
-Sprint 0-1: Working App          Sprint 2-5: Local DevOps         Sprint 6-10: Cloud              Sprint 11: Advanced
+Sprint 0-1: Working App          Sprint 2-5: Local DevOps         Sprint 6-8: Cloud               Sprint 9-10: Bonus
 ┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────┐
-│ 0: Service skeletons  │    │ 2: Compose production │    │ 6: Terraform + AWS   │    │ 11: Service Mesh     │
-│ 1: 3 core flows       │───▶│ 3: CI/CD (GitHub Act) │───▶│ 7: ECS Fargate       │───▶│     (Istio)          │
-│    (services wired)   │    │ 3.5: CI/CD (Jenkins)  │    │ 8: EKS               │    │                      │
-│                       │    │ 4: K8s manifests      │    │ 9: Prod hardening    │    │                      │
-│                       │    │ 5: Helm + Monitoring  │    │ 10: Serverless       │    │                      │
+│ 0: Service skeletons  │    │ 2: Compose production │    │ 6: Terraform + AWS   │    │ 9: Serverless (bonus)│
+│ 1: 3 core flows       │───▶│ 3: CI/CD (GitHub Act) │───▶│ 7: EKS ★            │───▶│ 10: Service Mesh     │
+│    (services wired)   │    │ 3.5: CI/CD (Jenkins)  │    │ 8: Prod hardening    │    │     (Istio)          │
+│                       │    │ 4: K8s manifests      │    │                      │    │                      │
+│                       │    │ 5: Helm + Monitoring  │    │                      │    │                      │
 └──────────────────────┘    └──────────────────────┘    └──────────────────────┘    └──────────────────────┘
+                                                              ★ = TARGET
 ```
 
 **The 3 Core Flows** (Sprint 1) — minimum viable "blood vessels":
@@ -40,14 +41,15 @@ Sprint 0-1: Working App          Sprint 2-5: Local DevOps         Sprint 6-10: C
 | 2.5 ✅ | 🟢 Local | Docker Sandbox Executor | Docker-in-Docker, container isolation, resource limits, security |
 | 3 ✅ | 🟢 Local | CI/CD pipeline (GitHub Actions) | GitHub Actions, SonarCloud, Trivy, Dependabot |
 | 3.5 | 🟢 Local | CI/CD pipeline (Jenkins) | Jenkins, Jenkinsfile, Webhook, OWASP Dependency-Check |
-| 4 | 🔵 K8s | Kubernetes basics | Manifests, Deployments, Services, ConfigMaps, kubectl |
-| 5 | 🔵 K8s | Helm + Monitoring | Helm charts, Prometheus, Grafana, HPA, load testing |
-| 6 | 🟠 AWS | Terraform + AWS | IaC modules, VPC, ECR, RDS, ElastiCache, SQS |
-| 7 | 🟠 AWS | Deploy ECS Fargate | ECS, ALB, Route53, ACM, CloudFront, Blue/Green, CD |
-| 8 | 🟣 EKS | Deploy EKS | EKS, IRSA, ArgoCD, Canary deploy, Cluster Autoscaler |
-| 9 | 🟣 EKS | Production hardening | EFK logging, OpenTelemetry, WAF, Chaos Engineering |
-| 10 | ☁️ Serverless | Full serverless | Lambda, API Gateway, S3, DynamoDB, SQS, SAM/CDK |
-| 11 | 🔶 Advanced | Service Mesh (Istio) | Envoy sidecar, mTLS, canary deploy, traffic splitting, fault injection, Kiali |
+| 4 ✅ | 🔵 K8s | Kubernetes basics | Manifests, Deployments, Services, ConfigMaps, kubectl |
+| **5** | 🔵 K8s | **Helm + Monitoring** | Helm charts, Prometheus, Grafana, HPA, load testing |
+| **6** | 🟠 AWS | **Terraform + AWS** | IaC modules, VPC, ECR, RDS, ElastiCache, SQS |
+| **7 ★** | 🟣 EKS | **Deploy EKS** | EKS, IRSA, ArgoCD, Canary deploy, Cluster Autoscaler |
+| 8 | 🟣 EKS | Production hardening | EFK logging, OpenTelemetry, WAF, Chaos Engineering |
+| 9 | ☁️ Bonus | Full serverless (optional) | Lambda, API Gateway, S3, DynamoDB, SQS, SAM/CDK |
+| 10 | 🔶 Advanced | Service Mesh (Istio) | Envoy sidecar, mTLS, canary deploy, traffic splitting, fault injection, Kiali |
+
+> **Fast track → EKS**: Sprint 5 → 6 → **7 ★** (3 sprints = ~6 weeks)
 
 ---
 

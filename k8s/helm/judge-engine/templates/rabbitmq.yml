@@ -1,32 +1,33 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: rabbitmq
-  namespace: judge-engine
+  name: {{ include "judge-engine.fullname" . }}-rabbitmq
+  namespace: {{ .Values.global.namespace }}
   labels:
-    app: rabbitmq
+    {{- include "judge-engine.labels" . | nindent 4 }}
 spec:
-  serviceName: rabbitmq
+  serviceName: {{ include "judge-engine.fullname" . }}-rabbitmq
   selector:
     matchLabels:
       app: rabbitmq
-  replicas: 1
+  replicas: {{ .Values.rabbitmq.replicaCount }}
   template:
     metadata:
       labels:
+        {{- include "judge-engine.labels" . | nindent 8 }}
         app: rabbitmq
     spec:
       containers:
         - name: rabbitmq
-          image: rabbitmq:3-management-alpine
+          image: {{ .Values.rabbitmq.image }}
           ports:
             - containerPort: 5672
             - containerPort: 15672
           envFrom:
             - configMapRef:
-                name: judge-engine-config
+                name: {{ include "judge-engine.fullname" . }}-config
             - secretRef:
-                name: judge-engine-secret
+                name: {{ include "judge-engine.fullname" . }}-secret
           volumeMounts:
             - name: rabbitmq-storage
               mountPath: /var/lib/rabbitmq
@@ -37,16 +38,16 @@ spec:
         accessModes: ["ReadWriteOnce"]
         resources:
           requests:
-            storage: 1Gi
+            storage: {{ .Values.rabbitmq.storage }}
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: rabbitmq
-  namespace: judge-engine
+  name: {{ include "judge-engine.fullname" . }}-rabbitmq
+  namespace: {{ .Values.global.namespace }}
   labels:
-    app: rabbitmq
+    {{- include "judge-engine.labels" . | nindent 4 }}
 spec:
   selector:
     app: rabbitmq

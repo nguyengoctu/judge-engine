@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+data:
+  # DB
+  DB_HOST: {{ include "judge-engine.fullname" . }}-db
+  DB_PORT: "5432"
+  DB_NAME: judgedb
+
+  POSTGRES_DB: judgedb
+  
+  # Redis
+  REDIS_HOST: {{ include "judge-engine.fullname" . }}-redis
+  REDIS_PORT: "6379"
+  
+  # RabbitMQ
+  RABBITMQ_HOST: {{ include "judge-engine.fullname" . }}-rabbitmq
+  RABBITMQ_PORT: "5672"
+  
+  # Problem Service
+  PROBLEM_SERVICE_HOST: {{ include "judge-engine.fullname" . }}-problem-service
+  PROBLEM_SERVICE_PORT: "8081"
+  
+  # Submission Service
+  SUBMISSION_SERVICE_HOST: {{ include "judge-engine.fullname" . }}-submission-service
+  SUBMISSION_SERVICE_PORT: "8082"
+  
+  # Executor
+  EXECUTOR_MODE: {{ .Values.worker.executorMode }}
+  SANDBOX_MEMORY_LIMIT: {{ .Values.worker.resources.docker.memoryLimit }}
+  SANDBOX_CPU_LIMIT: {{ .Values.worker.resources.docker.cpuLimit }}
+  SANDBOX_TIMEOUT: {{ .Values.worker.resources.docker.timeout }}
+  SANDBOX_PIDS_LIMIT: {{ .Values.worker.resources.docker.pidsLimit }}
+  MOCK_EXEC_TIMEOUT: {{ .Values.worker.resources.mock.execTimeout }}
+  MOCK_EXEC_MAX_MEMORY: {{ .Values.worker.resources.mock.maxMemory }}
+  
+  # Logging
+  LOG_LEVEL: {{ .Values.logLevel }}
+  LOG_FORMAT: {{ .Values.logFormat }}
+  
+  # NGINX
+  NGINX_PORT: "80"
+  
+  # Spring Profiles
+  SPRING_PROFILES_ACTIVE: {{ .Values.springProfile }}

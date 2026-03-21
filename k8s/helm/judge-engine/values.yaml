@@ -1,0 +1,78 @@
+global:
+  namespace: judge-engine
+
+image:
+  imagePullPolicy: Never
+
+ingress:
+  enabled: true
+
+# profile
+springProfile: dev
+
+# log level
+logLevel: DEBUG
+logFormat: json
+
+# services
+version: latest
+
+apiGateway:
+  replicaCount: 1
+  image: api-gateway
+
+frontend:
+  replicaCount: 1
+  image: frontend
+
+problemService:
+  replicaCount: 1
+  image: problem-service
+
+submissionService:
+  replicaCount: 1
+  image: submission-service
+
+worker:
+  replicaCount: 2
+  image: worker
+  dind:
+    enabled: true
+  executorMode: docker
+  resources:
+    docker:
+      memoryLimit: "256m"
+      cpuLimit: "0.5"
+      timeout: "10"
+      pidsLimit: "50"
+    mock:
+      execTimeout: "5"
+      maxMemory: "256"
+
+# third party
+
+rabbitmq:
+  replicaCount: 1
+  image: rabbitmq:3-management-alpine
+  user: guest
+  password: guest
+  storage: 1Gi
+
+redis:
+  replicaCount: 1
+  image: redis:7-alpine
+  storage: 1Gi
+
+judgeDb:
+  replicaCount: 1
+  image: postgres:16-alpine
+  user: postgres
+  password: postgres
+  storage: 1Gi
+
+# hpa
+autoScaling:
+  worker:
+    enabled: false
+  submissionService:
+    enabled: false
