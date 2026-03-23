@@ -91,6 +91,7 @@ k8s-clean:
 	-kubectl delete -f k8s/judge-db.yml
 	-kubectl delete -f k8s/secrets.yml
 	-kubectl delete -f k8s/configMap.yml
+	-kubectl delete -f k8s/namespace.yml
 	@echo "Resources deleted. Cluster still running."
 
 k8s-delete:

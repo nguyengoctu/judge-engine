@@ -32,11 +32,11 @@ data:
   # Executor
   EXECUTOR_MODE: {{ .Values.worker.executorMode }}
   SANDBOX_MEMORY_LIMIT: {{ .Values.worker.resources.docker.memoryLimit }}
-  SANDBOX_CPU_LIMIT: {{ .Values.worker.resources.docker.cpuLimit }}
-  SANDBOX_TIMEOUT: {{ .Values.worker.resources.docker.timeout }}
-  SANDBOX_PIDS_LIMIT: {{ .Values.worker.resources.docker.pidsLimit }}
-  MOCK_EXEC_TIMEOUT: {{ .Values.worker.resources.mock.execTimeout }}
-  MOCK_EXEC_MAX_MEMORY: {{ .Values.worker.resources.mock.maxMemory }}
+  SANDBOX_CPU_LIMIT: {{ .Values.worker.resources.docker.cpuLimit | quote }}
+  SANDBOX_TIMEOUT: {{ .Values.worker.resources.docker.timeout | quote }}
+  SANDBOX_PIDS_LIMIT: {{ .Values.worker.resources.docker.pidsLimit | quote }}
+  MOCK_EXEC_TIMEOUT: {{ .Values.worker.resources.mock.execTimeout | quote }}
+  MOCK_EXEC_MAX_MEMORY: {{ .Values.worker.resources.mock.maxMemory | quote }}
   
   # Logging
   LOG_LEVEL: {{ .Values.logLevel }}
