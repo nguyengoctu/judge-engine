@@ -52,9 +52,7 @@ def get_docker_client():
         try:
             client = docker.from_env()
             if attempt > 0:
-                logger.info(
-                    f"Docker daemon connected after {attempt}s"
-                )
+                logger.info(f"Docker daemon connected after {attempt}s")
             return client
         except docker.errors.DockerException:
             if attempt < max_retries - 1:

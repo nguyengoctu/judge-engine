@@ -77,6 +77,10 @@ k8s-cluster:
 		--selector=app.kubernetes.io/component=controller \
 		--timeout=120s
 	$(MAKE) k8s-fix-ingress
+	kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+	kubectl patch deployment metrics-server -n kube-system --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
+	kubectl wait --for=condition=ready pod -l k8s-app=metrics-server -n kube-system --timeout=120s
+
 
 k8s-clean:
 	@echo "Deleting app resources (keeping cluster)..."

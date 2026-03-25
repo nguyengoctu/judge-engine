@@ -9,7 +9,6 @@ spec:
   selector:
     matchLabels:
       app: submission-service
-  replicas: {{ .Values.submissionService.replicaCount }}
   template:
     metadata:
       labels:

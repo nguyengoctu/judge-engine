@@ -9,7 +9,6 @@ spec:
   selector:
     matchLabels:
       app: worker
-  replicas: {{ .Values.worker.replicaCount }}
   template:
     metadata:
       labels:
@@ -24,6 +23,13 @@ spec:
           env:
             - name: DOCKER_HOST
               value: tcp://localhost:2375
+          resources:
+            requests:
+              cpu: {{ .Values.worker.resources.containers.builder.requests.cpu }}
+              memory: {{ .Values.worker.resources.containers.builder.requests.memory }}
+            limits:
+              cpu: {{ .Values.worker.resources.containers.builder.limits.cpu }}
+              memory: {{ .Values.worker.resources.containers.builder.limits.memory }}
           command:
             - sh
             - -c
@@ -84,6 +90,13 @@ spec:
               port: 8083
             initialDelaySeconds: 60
             periodSeconds: 10
+          resources:
+            requests:
+              cpu: {{ .Values.worker.resources.containers.worker.requests.cpu }}
+              memory: {{ .Values.worker.resources.containers.worker.requests.memory }}
+            limits:
+              cpu: {{ .Values.worker.resources.containers.worker.limits.cpu }}
+              memory: {{ .Values.worker.resources.containers.worker.limits.memory }}
           envFrom:
             - configMapRef:
                 name: {{ include "judge-engine.fullname" . }}-config
@@ -101,6 +114,13 @@ spec:
           volumeMounts:
             - name: dind-storage
               mountPath: /var/lib/docker
+          resources:
+            requests:
+              cpu: {{ .Values.worker.resources.containers.dind.requests.cpu }}
+              memory: {{ .Values.worker.resources.containers.dind.requests.memory }}
+            limits:
+              cpu: {{ .Values.worker.resources.containers.dind.limits.cpu }}
+              memory: {{ .Values.worker.resources.containers.dind.limits.memory }}
       volumes:
         - name: dind-storage
           emptyDir: {}

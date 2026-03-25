@@ -18,29 +18,61 @@ logFormat: json
 version: latest
 
 apiGateway:
-  replicaCount: 1
+  minReplicas: 1
+  maxReplicas: 5
+  desiredReplicas: 1
   image: api-gateway
 
 frontend:
-  replicaCount: 1
+  minReplicas: 1
+  maxReplicas: 5
+  desiredReplicas: 1
   image: frontend
 
 problemService:
-  replicaCount: 1
+  minReplicas: 1
+  maxReplicas: 5
+  desiredReplicas: 1
   image: problem-service
 
 submissionService:
-  replicaCount: 1
+  minReplicas: 1
+  maxReplicas: 5
+  desiredReplicas: 1
   image: submission-service
 
 worker:
-  replicaCount: 2
+  minReplicas: 2
+  maxReplicas: 10
+  desiredReplicas: 2
   image: worker
   dind:
     enabled: true
   executorMode: docker
   resources:
-    docker:
+    containers:
+      builder:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+      worker:
+        requests:
+          cpu: "200m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+      dind:
+        requests:
+          cpu: "300m"
+          memory: "256Mi"
+        limits:
+          cpu: "1"
+          memory: "1Gi"
+    sandbox:
       memoryLimit: "256m"
       cpuLimit: "0.5"
       timeout: "10"
@@ -73,6 +105,6 @@ judgeDb:
 # hpa
 autoScaling:
   worker:
-    enabled: false
+    enabled: true
   submissionService:
     enabled: false
