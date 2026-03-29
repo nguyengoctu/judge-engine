@@ -6,6 +6,12 @@ from app.database import get_db
 from app.models.submission import Submission
 from app.schemas import SubmissionCreate, SubmissionResponse
 from app.services.queue import publish_submission
+from app.metrics import (
+    submissions_total,
+    submissions_by_status,
+    queue_publish_errors_total,
+    submission_create_duration,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/submissions", tags=["Submissions"])
@@ -20,26 +26,33 @@ router = APIRouter(prefix="/api/submissions", tags=["Submissions"])
                 pending status.",
 )
 def create_submission(body: SubmissionCreate, db: Session = Depends(get_db)):
-    submission = Submission(
-        id=uuid.uuid4(),
-        user_id="anonymous",
-        problem_id=(
-            uuid.UUID(body.problem_id) if body.problem_id else uuid.uuid4()
-        ),
-        code=body.code,
-        language=body.language,
-        status="pending",
-    )
-    db.add(submission)
-    db.commit()
-    db.refresh(submission)
-
-    try:
-        publish_submission(str(submission.id), body.code, body.language)
-    except Exception as e:
-        logger.error(f"Queue publish failed for {submission.id}: {e}")
-        submission.status = "error"
+    with submission_create_duration.time():
+        submission = Submission(
+            id=uuid.uuid4(),
+            user_id="anonymous",
+            problem_id=(
+                uuid.UUID(body.problem_id) if body.problem_id else uuid.uuid4()
+            ),
+            code=body.code,
+            language=body.language,
+            status="pending",
+        )
+        db.add(submission)
         db.commit()
+        db.refresh(submission)
+
+        # Track submission by language
+        submissions_total.labels(language=body.language).inc()
+        submissions_by_status.labels(status="pending").inc()
+
+        try:
+            publish_submission(str(submission.id), body.code, body.language)
+        except Exception as e:
+            logger.error(f"Queue publish failed for {submission.id}: {e}")
+            submission.status = "error"
+            db.commit()
+            queue_publish_errors_total.inc()
+            submissions_by_status.labels(status="error").inc()
 
     return SubmissionResponse(
         id=str(submission.id),

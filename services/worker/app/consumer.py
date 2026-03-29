@@ -4,6 +4,12 @@ import os
 import pika
 import time
 import sqlalchemy
+from app.metrics import (
+    jobs_processed_total,
+    jobs_failed_total,
+    job_execution_duration,
+    jobs_in_progress,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +80,7 @@ def update_submission(
 
 def on_message(channel, method, properties, body):
     """Process a submission message from the queue."""
+    jobs_in_progress.inc()
     try:
         message = json.loads(body)
         submission_id = message["submission_id"]
@@ -88,8 +95,9 @@ def on_message(channel, method, properties, body):
         # Update status to running
         update_submission(submission_id, "running", {}, 0, 0)
 
-        # Execute code
-        result = execute(code, language)
+        # Execute code and measure duration
+        with job_execution_duration.time():
+            result = execute(code, language)
 
         # Map status
         final_status = result["status"]
@@ -97,6 +105,11 @@ def on_message(channel, method, properties, body):
             final_status = "failed"
         elif final_status == "timeout":
             final_status = "failed"
+
+        # Track job completion
+        jobs_processed_total.labels(
+            language=language, status=final_status
+        ).inc()
 
         # Update with results
         update_submission(
@@ -117,7 +130,10 @@ def on_message(channel, method, properties, body):
 
     except Exception as e:
         logger.error(f"Failed to process message: {e}")
+        jobs_failed_total.inc()
         channel.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+    finally:
+        jobs_in_progress.dec()
 
 
 def start_consumer():

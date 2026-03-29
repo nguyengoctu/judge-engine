@@ -47,11 +47,31 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     {{- include "judge-engine.labels" . | nindent 4 }}
+    app: submission-service
 spec:
   selector:
     app: submission-service
   ports:
-    - port: 8082
+    - name: http
+      port: 8082
       targetPort: 8082
   type: ClusterIP
 
+{{- if .Values.monitoring.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-submission-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+    app: submission-service
+spec:
+  selector:
+    matchLabels:
+      app: submission-service
+  endpoints:
+    - port: http
+      path: /metrics
+{{- end }}

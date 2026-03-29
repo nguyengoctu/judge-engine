@@ -74,7 +74,8 @@ spec:
           image: {{ printf "%s:%s" .Values.worker.image .Values.version }}
           imagePullPolicy: {{ .Values.image.imagePullPolicy }}
           ports:
-            - containerPort: 8083
+            - name: http
+              containerPort: 8083
           env:
             - name: DOCKER_HOST
               value: tcp://localhost:2375
@@ -124,3 +125,22 @@ spec:
       volumes:
         - name: dind-storage
           emptyDir: {}
+
+{{- if .Values.monitoring.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-worker
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+    app: worker
+spec:
+  selector:
+    matchLabels:
+      app: worker
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+{{- end }}

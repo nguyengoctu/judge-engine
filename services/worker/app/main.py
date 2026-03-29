@@ -4,6 +4,7 @@ import threading
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.logging_config import setup_logging
 
@@ -63,3 +64,8 @@ async def health_check():
         "service": "worker",
         "consumer_connected": consumer_connected,
     }
+
+
+# Prometheus metrics - auto instruments HTTP endpoints
+# Exposes /metrics endpoint
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
