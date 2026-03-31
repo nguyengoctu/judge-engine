@@ -46,7 +46,7 @@ submissionService:
 
 worker:
   minReplicas: 2
-  maxReplicas: 10
+  maxReplicas: 50
   desiredReplicas: 2
   image: worker
   dind:

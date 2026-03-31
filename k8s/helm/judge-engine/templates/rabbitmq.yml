@@ -20,9 +20,16 @@ spec:
       containers:
         - name: rabbitmq
           image: {{ .Values.rabbitmq.image }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              rabbitmq-plugins enable --offline rabbitmq_prometheus
+              exec docker-entrypoint.sh rabbitmq-server
           ports:
             - containerPort: 5672
             - containerPort: 15672
+            - containerPort: 15692
+              name: prometheus
           envFrom:
             - configMapRef:
                 name: {{ include "judge-engine.fullname" . }}-config
@@ -48,6 +55,7 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     {{- include "judge-engine.labels" . | nindent 4 }}
+    app: rabbitmq
 spec:
   selector:
     app: rabbitmq
@@ -58,5 +66,31 @@ spec:
     - port: 15672
       name: management
       targetPort: 15672
+    - port: 15692
+      name: prometheus
+      targetPort: 15692
   clusterIP: None
+
+{{- if .Values.monitoring.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-rabbitmq
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+    release: my-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: rabbitmq
+  namespaceSelector:
+    matchNames:
+      - {{ .Values.global.namespace }}
+  endpoints:
+    - port: prometheus
+      interval: 15s
+      path: /metrics
+{{- end }}
 

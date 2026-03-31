@@ -235,7 +235,13 @@ k8s-import-dashboards:
 	@GRAFANA_PASS=$$(kubectl get secret -n monitoring my-prometheus-grafana \
 		-o jsonpath='{.data.admin-password}' | base64 -d) && \
 	kubectl port-forward -n monitoring svc/my-prometheus-grafana 3000:80 &>/dev/null & \
-	PF_PID=$$! && sleep 4 && \
+	PF_PID=$$! && \
+	echo "Waiting for Grafana API..." && \
+	for i in $$(seq 1 30); do \
+		sleep 3 && \
+		STATUS=$$(curl -s -o /dev/null -w "%{http_code}" -u admin:$$GRAFANA_PASS http://localhost:3000/api/org) && \
+		[ "$$STATUS" = "200" ] && echo "Grafana ready ($$i)" && break || echo "Not ready yet ($$i/30, HTTP $$STATUS)"; \
+	done && \
 	python3 -c "\
 import json; \
 d=json.load(open('k8s/grafana/judge-engine-dashboard.json')); \
@@ -246,7 +252,7 @@ json.dump({'dashboard':d,'overwrite':True,'folderId':0},open('/tmp/gf-import.jso
 		-u admin:$$GRAFANA_PASS \
 		http://localhost:3000/api/dashboards/db \
 		-d @/tmp/gf-import.json \
-		| python3 -c "import json,sys; r=json.load(sys.stdin); print('Dashboard:', r.get('status','FAILED'))" && \
+		| python3 -c "import json,sys; r=json.load(sys.stdin); print('Dashboard:', r.get('status','FAILED'), r.get('url',''))" && \
 	kill $$PF_PID 2>/dev/null || true
 	@echo "Dashboards imported ✅"
 

@@ -36,7 +36,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "gridPos": { "h": 4, "w": 5, "x": 0, "y": 1 },
       "id": 1,
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
       "title": "API Gateway",
@@ -57,7 +57,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "gridPos": { "h": 4, "w": 5, "x": 5, "y": 1 },
       "id": 2,
       "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
       "title": "Submission Service",
@@ -76,7 +76,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "gridPos": { "h": 4, "w": 5, "x": 10, "y": 1 },
       "id": 3,
       "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
       "title": "Worker Pods Running",
@@ -95,13 +95,32 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "gridPos": { "h": 4, "w": 5, "x": 15, "y": 1 },
       "id": 4,
       "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
       "title": "⚡ Jobs In Progress",
       "type": "stat",
       "targets": [
         { "expr": "sum(worker_jobs_in_progress) or vector(0)", "legendFormat": "In Progress", "refId": "A" }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 100 }, { "color": "orange", "value": 1000 }, { "color": "red", "value": 5000 } ] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "id": 5,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
+      "title": "📬 Queue Depth",
+      "type": "stat",
+      "targets": [
+        { "expr": "sum(rabbitmq_queue_messages{namespace=\"judge-engine\"}) or vector(0)", "legendFormat": "Backlog", "refId": "A" }
       ]
     },
     {
@@ -278,13 +297,40 @@
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": {
         "defaults": {
+          "color": { "mode": "continuous-BlYlRd" },
+          "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisLabel": "messages", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 30, "gradientMode": "scheme", "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5, "showPoints": "never", "stacking": { "group": "A", "mode": "none" } }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "id": 25,
+      "options": { "legend": { "calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "title": "📬 Queue Depth Over Time",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "rabbitmq_queue_messages{namespace=\"judge-engine\"}",
+          "legendFormat": "messages waiting",
+          "refId": "A"
+        },
+        {
+          "expr": "rabbitmq_queue_messages_unacked{namespace=\"judge-engine\"}",
+          "legendFormat": "unacked (in-flight)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [],
           "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] }
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 31 },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 31 },
       "id": 22,
       "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
       "title": "Total Jobs Failed",
@@ -303,7 +349,7 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 31 },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 31 },
       "id": 23,
       "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto", "wideLayout": true },
       "title": "Queue Publish Errors",
