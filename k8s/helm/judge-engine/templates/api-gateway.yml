@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: {{ include "judge-engine.fullname" . }}-api-gateway
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: api-gateway
+  replicas: {{ .Values.apiGateway.replicaCount }}
+  template:
+    metadata:
+      labels:
+        {{- include "judge-engine.labels" . | nindent 8 }}
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: {{ printf "%s:%s" .Values.apiGateway.image .Values.version }}
+          imagePullPolicy: {{ .Values.image.imagePullPolicy }}
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          envFrom:
+            - configMapRef:
+                name: {{ include "judge-engine.fullname" . }}-config
+            - secretRef:
+                name: {{ include "judge-engine.fullname" . }}-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-api-gateway
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+    app: api-gateway
+spec:
+  selector:
+    app: api-gateway
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+{{- if .Values.monitoring.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-api-gateway
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: api-gateway
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+{{- end }}

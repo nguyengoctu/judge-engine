@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: {{ include "judge-engine.fullname" . }}-submission-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app: submission-service
+  template:
+    metadata:
+      labels:
+        {{- include "judge-engine.labels" . | nindent 8 }}
+        app: submission-service
+    spec:
+      containers:
+        - name: submission-service
+          image: {{ printf "%s:%s" .Values.submissionService.image .Values.version }}
+          imagePullPolicy: {{ .Values.image.imagePullPolicy }}
+          ports:
+            - containerPort: 8082
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          envFrom:
+            - configMapRef:
+                name: {{ include "judge-engine.fullname" . }}-config
+            - secretRef:
+                name: {{ include "judge-engine.fullname" . }}-secret
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-submission-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+    app: submission-service
+spec:
+  selector:
+    app: submission-service
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082
+  type: ClusterIP
+
+{{- if .Values.monitoring.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-submission-service
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+    app: submission-service
+spec:
+  selector:
+    matchLabels:
+      app: submission-service
+  endpoints:
+    - port: http
+      path: /metrics
+{{- end }}

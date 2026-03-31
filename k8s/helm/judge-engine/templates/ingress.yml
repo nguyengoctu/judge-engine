@@ -1,8 +1,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: judge-engine-ingress
-  namespace: judge-engine
+  name: {{ include "judge-engine.fullname" . }}-ingress
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
 spec:
   ingressClassName: nginx
   rules:
@@ -12,13 +14,13 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: api-gateway
+                name: {{ include "judge-engine.fullname" . }}-api-gateway
                 port:
                   number: 8080
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: frontend
+                name: {{ include "judge-engine.fullname" . }}-frontend
                 port:
                   number: 80

@@ -1,0 +1,122 @@
+global:
+  namespace: judge-engine
+
+image:
+  imagePullPolicy: Never
+
+ingress:
+  enabled: true
+
+monitoring:
+  enabled: true
+
+# profile
+springProfile: dev
+
+# log level
+logLevel: DEBUG
+logFormat: json
+
+# services
+version: latest
+
+apiGateway:
+  minReplicas: 1
+  maxReplicas: 5
+  desiredReplicas: 1
+  image: api-gateway
+
+frontend:
+  minReplicas: 1
+  maxReplicas: 5
+  desiredReplicas: 1
+  image: frontend
+
+problemService:
+  minReplicas: 1
+  maxReplicas: 5
+  desiredReplicas: 1
+  image: problem-service
+
+submissionService:
+  minReplicas: 1
+  maxReplicas: 5
+  desiredReplicas: 1
+  image: submission-service
+
+worker:
+  minReplicas: 2
+  maxReplicas: 50
+  desiredReplicas: 2
+  image: worker
+  dind:
+    enabled: true
+  executorMode: docker
+  resources:
+    containers:
+      builder:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+      worker:
+        requests:
+          cpu: "200m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+      dind:
+        requests:
+          cpu: "300m"
+          memory: "256Mi"
+        limits:
+          cpu: "1"
+          memory: "1Gi"
+    sandbox:
+      memoryLimit: "256m"
+      cpuLimit: "0.5"
+      timeout: "10"
+      pidsLimit: "50"
+    mock:
+      execTimeout: "5"
+      maxMemory: "256"
+
+# in-cluster docker registry (for runner images)
+registry:
+  storage: 2Gi
+
+# third party
+
+rabbitmq:
+  replicaCount: 1
+  image: rabbitmq:3-management-alpine
+  user: guest
+  password: guest
+  storage: 1Gi
+
+redis:
+  replicaCount: 1
+  image: redis:7-alpine
+  storage: 1Gi
+
+judgeDb:
+  replicaCount: 1
+  image: postgres:16-alpine
+  user: postgres
+  password: postgres
+  storage: 1Gi
+
+# hpa / keda
+autoScaling:
+  worker:
+    enabled: true
+    useKeda: true                        # true = KEDA (queue-based), false = vanilla HPA (CPU-based)
+    queueName: submissions.execute       # RabbitMQ queue to watch
+    queueTarget: "5"                     # Scale up when > 5 messages per worker
+    pollingInterval: 10                  # Check queue every 10s
+    cooldownPeriod: 300                  # Wait 5min before scaling down
+  submissionService:
+    enabled: false

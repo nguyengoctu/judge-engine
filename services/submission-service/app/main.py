@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 from app.routes import health
 from app.routes import submissions
 from app.routes import queue_status
@@ -39,3 +40,7 @@ app = FastAPI(
 app.include_router(health.router, tags=["Health"])
 app.include_router(submissions.router)
 app.include_router(queue_status.router)
+
+# Prometheus metrics - auto instruments all HTTP endpoints
+# Exposes /metrics endpoint
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
