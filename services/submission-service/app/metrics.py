@@ -7,7 +7,8 @@ submissions_total = Counter(
     ["language"],
 )
 
-# Submissions grouped by result status (pending, accepted, wrong_answer, error...)
+# Submissions grouped by result status
+# (pending, accepted, wrong_answer, error...)
 submissions_by_status = Counter(
     "submissions_by_status_total",
     "Total submissions by result status",
@@ -26,4 +27,3 @@ submission_create_duration = Histogram(
     "Time spent creating a submission (DB + queue publish)",
     buckets=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5],
 )
-
