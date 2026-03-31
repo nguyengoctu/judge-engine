@@ -1,4 +1,5 @@
-{{- if .Values.autoScaling.worker.enabled }}
+{{- if and .Values.autoScaling.worker.enabled (not .Values.autoScaling.worker.useKeda) }}
+# ── Fallback: vanilla HPA (only if KEDA is NOT used) ──
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

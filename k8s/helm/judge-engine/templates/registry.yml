@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-registry
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        {{- include "judge-engine.labels" . | nindent 8 }}
+        app: registry
+    spec:
+      containers:
+        - name: registry
+          image: registry:2
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: registry-storage
+              mountPath: /var/lib/registry
+          env:
+            - name: REGISTRY_STORAGE_DELETE_ENABLED
+              value: "true"
+      volumes:
+        - name: registry-storage
+          persistentVolumeClaim:
+            claimName: {{ include "judge-engine.fullname" . }}-registry-pvc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-registry-pvc
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: {{ .Values.registry.storage }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-registry
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: registry
+  ports:
+    - port: 5000
+      targetPort: 5000

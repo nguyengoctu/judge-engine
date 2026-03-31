@@ -1,0 +1,53 @@
+{{- if .Values.autoScaling.worker.enabled }}
+# ── KEDA TriggerAuthentication for RabbitMQ ──
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-rabbitmq-auth
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+spec:
+  secretTargetRef:
+    - parameter: host
+      name: {{ include "judge-engine.fullname" . }}-rabbitmq-conn
+      key: RABBITMQ_URL
+
+---
+# ── Secret with RabbitMQ connection string ──
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-rabbitmq-conn
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  RABBITMQ_URL: amqp://{{ .Values.rabbitmq.user }}:{{ .Values.rabbitmq.password }}@{{ include "judge-engine.fullname" . }}-rabbitmq.{{ .Values.global.namespace }}.svc.cluster.local:5672/
+
+---
+# ── KEDA ScaledObject — replaces HPA ──
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "judge-engine.fullname" . }}-worker-scaler
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "judge-engine.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    name: {{ include "judge-engine.fullname" . }}-worker
+  minReplicaCount: {{ .Values.worker.minReplicas }}
+  maxReplicaCount: {{ .Values.worker.maxReplicas }}
+  pollingInterval: {{ .Values.autoScaling.worker.pollingInterval | default 10 }}
+  cooldownPeriod: {{ .Values.autoScaling.worker.cooldownPeriod | default 300 }}
+  triggers:
+    - type: rabbitmq
+      metadata:
+        queueName: {{ .Values.autoScaling.worker.queueName }}
+        mode: QueueLength
+        value: {{ .Values.autoScaling.worker.queueTarget | quote }}
+      authenticationRef:
+        name: {{ include "judge-engine.fullname" . }}-rabbitmq-auth
+{{- end }}

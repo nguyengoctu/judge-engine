@@ -10,11 +10,16 @@ from docker.errors import ImageNotFound, APIError
 
 logger = logging.getLogger(__name__)
 
+# Runner image registry prefix
+# - Docker Compose: "" (local images)
+# - K8s: "judge-engine-registry:5000/" (in-cluster registry)
+RUNNER_REGISTRY = os.getenv("RUNNER_REGISTRY", "")
+
 # Runner image mapping
 LANGUAGE_IMAGES = {
-    "python": "judge-runner-python:latest",
-    "javascript": "judge-runner-javascript:latest",
-    "java": "judge-runner-java:latest",
+    "python": f"{RUNNER_REGISTRY}judge-runner-python:latest",
+    "javascript": f"{RUNNER_REGISTRY}judge-runner-javascript:latest",
+    "java": f"{RUNNER_REGISTRY}judge-runner-java:latest",
 }
 
 # File extensions per language
@@ -75,20 +80,43 @@ def _make_tar(filename: str, code: str) -> bytes:
 
 
 def pull_runner_images():
-    """Pre-pull runner images on startup to avoid cold-start delays."""
-    client = get_docker_client()
-    for language, image in LANGUAGE_IMAGES.items():
-        try:
-            client.images.get(image)
-            logger.info(f"Runner image ready: {image}")
-        except ImageNotFound:
-            logger.warning(
-                f"Runner image {image} not found locally. "
-                f"Build it with: docker build -t {image} \
-                            -f docker/runners/Dockerfile.{language} \
-                            docker/runners/"
-            )
-    client.close()
+    """Wait for all runner images to be available before consuming.
+
+    In K8s, the DinD sidecar builds runner images on startup.
+    This function blocks until ALL images are ready, preventing
+    the race condition where worker consumes messages before
+    images exist.
+    """
+    max_wait = 180  # 3 minutes max
+    poll_interval = 5
+    elapsed = 0
+
+    while elapsed < max_wait:
+        client = get_docker_client()
+        missing = []
+        for language, image in LANGUAGE_IMAGES.items():
+            try:
+                client.images.get(image)
+            except ImageNotFound:
+                missing.append(image)
+        client.close()
+
+        if not missing:
+            logger.info("All runner images ready: %s",
+                        list(LANGUAGE_IMAGES.values()))
+            return
+
+        logger.warning(
+            "Waiting for runner images (%ds/%ds): missing %s",
+            elapsed, max_wait, missing,
+        )
+        time.sleep(poll_interval)
+        elapsed += poll_interval
+
+    logger.error(
+        "Runner images not available after %ds. "
+        "Worker will start but executions may fail.", max_wait,
+    )
 
 
 def docker_execute(code: str, language: str) -> dict:

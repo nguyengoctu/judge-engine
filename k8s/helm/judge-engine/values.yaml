@@ -84,6 +84,10 @@ worker:
       execTimeout: "5"
       maxMemory: "256"
 
+# in-cluster docker registry (for runner images)
+registry:
+  storage: 2Gi
+
 # third party
 
 rabbitmq:
@@ -105,9 +109,14 @@ judgeDb:
   password: postgres
   storage: 1Gi
 
-# hpa
+# hpa / keda
 autoScaling:
   worker:
     enabled: true
+    useKeda: true                        # true = KEDA (queue-based), false = vanilla HPA (CPU-based)
+    queueName: submissions.execute       # RabbitMQ queue to watch
+    queueTarget: "5"                     # Scale up when > 5 messages per worker
+    pollingInterval: 10                  # Check queue every 10s
+    cooldownPeriod: 300                  # Wait 5min before scaling down
   submissionService:
     enabled: false

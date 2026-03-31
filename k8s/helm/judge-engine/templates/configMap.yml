@@ -38,6 +38,9 @@ data:
   MOCK_EXEC_TIMEOUT: {{ .Values.worker.resources.mock.execTimeout | quote }}
   MOCK_EXEC_MAX_MEMORY: {{ .Values.worker.resources.mock.maxMemory | quote }}
   
+  # Runner image registry (in-cluster)
+  RUNNER_REGISTRY: {{ include "judge-engine.fullname" . }}-registry:5000/
+  
   # Logging
   LOG_LEVEL: {{ .Values.logLevel }}
   LOG_FORMAT: {{ .Values.logFormat }}

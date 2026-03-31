@@ -15,14 +15,16 @@ spec:
         {{- include "judge-engine.labels" . | nindent 8 }}
         app: worker
     spec:
-      # Init: wait for DinD + build runner images
+      # Init: wait for DinD + pull runner images from in-cluster registry
       initContainers:
-        - name: build-runners
+        - name: pull-runners
           image: docker:cli
           restartPolicy: Always
           env:
             - name: DOCKER_HOST
               value: tcp://localhost:2375
+            - name: REGISTRY
+              value: {{ include "judge-engine.fullname" . }}-registry:5000
           resources:
             requests:
               cpu: {{ .Values.worker.resources.containers.builder.requests.cpu }}
@@ -38,32 +40,18 @@ spec:
               until docker info >/dev/null 2>&1; do sleep 1; done
               echo "Docker daemon ready!"
 
-              echo "Building runner images..."
-              # Python runner
-              cat <<'DOCKERFILE' | docker build -t judge-runner-python:latest -
-              FROM python:3.11-alpine
-              RUN apk upgrade --no-cache && adduser -D runner
-              USER runner
-              WORKDIR /code
-              DOCKERFILE
+              echo "Pulling runner images from $REGISTRY ..."
+              for lang in python javascript java; do
+                IMAGE="$REGISTRY/judge-runner-${lang}:latest"
+                echo "Pulling $IMAGE ..."
+                until docker pull "$IMAGE" 2>/dev/null; do
+                  echo "  Waiting for $IMAGE in registry..."
+                  sleep 3
+                done
+                echo "  $IMAGE ready"
+              done
 
-              # JavaScript runner
-              cat <<'DOCKERFILE' | docker build -t judge-runner-javascript:latest -
-              FROM node:20-alpine
-              RUN apk upgrade --no-cache && adduser -D runner
-              USER runner
-              WORKDIR /code
-              DOCKERFILE
-
-              # Java runner
-              cat <<'DOCKERFILE' | docker build -t judge-runner-java:latest -
-              FROM eclipse-temurin:21-jdk-alpine
-              RUN apk upgrade --no-cache && adduser -D runner
-              USER runner
-              WORKDIR /code
-              DOCKERFILE
-
-              echo "All runner images built!"
+              echo "All runner images pulled!"
               docker images | grep judge-runner
 
               echo "Sidecar staying alive..."
@@ -107,6 +95,8 @@ spec:
         # Docker-in-Docker sidecar
         - name: dind
           image: docker:dind
+          args:
+            - --insecure-registry={{ include "judge-engine.fullname" . }}-registry:5000
           securityContext:
             privileged: true
           env:
