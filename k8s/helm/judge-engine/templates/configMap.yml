@@ -6,12 +6,16 @@ metadata:
   labels:
     {{- include "judge-engine.labels" . | nindent 4 }}
 data:
-  # DB — use judgeDb.host for RDS, fallback to in-cluster service
   DB_HOST: {{ default (printf "%s-db" (include "judge-engine.fullname" .)) .Values.judgeDb.host }}
   DB_PORT: "5432"
   DB_NAME: judgedb
 
   POSTGRES_DB: judgedb
+  
+  # Aliases for Java services (Spring Boot uses DB_USER / DB_PASSWORD)
+  # These will be overridden by the Secret's POSTGRES_USER / POSTGRES_PASSWORD
+  # when the Secret is loaded via envFrom. But if Secret keys differ,
+  # we need explicit mapping. Handled below via env vars in pods.
   
   # Redis
   REDIS_HOST: {{ include "judge-engine.fullname" . }}-redis
