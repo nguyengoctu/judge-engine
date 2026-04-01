@@ -38,6 +38,17 @@ spec:
                 name: {{ include "judge-engine.fullname" . }}-config
             - secretRef:
                 name: {{ include "judge-engine.fullname" . }}-secret
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "judge-engine.fullname" . }}-secret
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "judge-engine.fullname" . }}-secret
+                  key: POSTGRES_PASSWORD
 
 ---
 apiVersion: v1
