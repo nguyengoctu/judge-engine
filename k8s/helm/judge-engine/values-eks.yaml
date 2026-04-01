@@ -1,0 +1,156 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# EKS production overrides
+# Merged on top of values.yaml by ArgoCD / helm install -f values.yaml -f values-eks.yaml
+#
+# Required setup before deploying:
+#   1. EKS cluster with AWS Load Balancer Controller installed
+#   2. RDS PostgreSQL instance in private subnets
+#   3. GHCR packages set to public  -OR-  create imagePullSecret:
+#      kubectl create secret docker-registry ghcr-pull-secret \
+#        --docker-server=ghcr.io \
+#        --docker-username=<github-username> \
+#        --docker-password=<PAT-with-read:packages> \
+#        -n judge-engine
+#   4. Create RDS credentials secret:
+#      kubectl create secret generic judge-engine-rds-secret \
+#        --from-literal=POSTGRES_USER=<user> \
+#        --from-literal=POSTGRES_PASSWORD=<password> \
+#        -n judge-engine
+# ─────────────────────────────────────────────────────────────────────────────
+
+global:
+  namespace: judge-engine
+
+image:
+  imagePullPolicy: Always
+
+# Uncomment if GHCR packages are private
+# imagePullSecrets:
+#   - name: ghcr-pull-secret
+
+springProfile: prod
+logLevel: INFO
+logFormat: json
+
+# ── Image tags — updated automatically by CD pipeline on each release tag ──
+version: latest
+
+# ── Service images from GHCR ──
+apiGateway:
+  image: ghcr.io/nguyengoctu/judge-engine/api-gateway
+  minReplicas: 1
+  maxReplicas: 5
+
+frontend:
+  image: ghcr.io/nguyengoctu/judge-engine/frontend
+  minReplicas: 1
+  maxReplicas: 3
+
+problemService:
+  image: ghcr.io/nguyengoctu/judge-engine/problem-service
+  minReplicas: 1
+  maxReplicas: 5
+
+submissionService:
+  image: ghcr.io/nguyengoctu/judge-engine/submission-service
+  minReplicas: 1
+  maxReplicas: 5
+
+worker:
+  image: ghcr.io/nguyengoctu/judge-engine/worker
+  minReplicas: 1
+  maxReplicas: 20
+  # Runner images are now on GHCR (pushed by CD pipeline)
+  runnerRegistry: "ghcr.io/nguyengoctu/judge-engine"
+  # Uncomment if GHCR packages are private:
+  # ghcrSecret: "ghcr-pull-secret"
+  executorMode: docker
+  resources:
+    containers:
+      builder:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "500m"
+          memory: "512Mi"
+      worker:
+        requests:
+          cpu: "200m"
+          memory: "256Mi"
+        limits:
+          cpu: "1"
+          memory: "512Mi"
+      dind:
+        requests:
+          cpu: "500m"
+          memory: "512Mi"
+        limits:
+          cpu: "2"
+          memory: "2Gi"
+    sandbox:
+      memoryLimit: "256m"
+      cpuLimit: "0.5"
+      timeout: "10"
+      pidsLimit: "50"
+    mock:
+      execTimeout: "5"
+      maxMemory: "256"
+
+# ── External Secrets Operator — auto-syncs Secrets Manager → K8s Secret ──
+# secretName is auto-updated by infra.yml after terraform apply.
+externalSecrets:
+  enabled: true
+  secretName: "REPLACE_WITH_SECRET_NAME"
+
+# ── Disable in-cluster Postgres — use RDS ──
+judgeDb:
+  enabled: false
+  # host is auto-updated by infra.yml after terraform apply.
+  host: "REPLACE_WITH_RDS_ENDPOINT"
+
+# ── Disable in-cluster registry — runner images are on GHCR ──
+registry:
+  enabled: false
+
+# ── RabbitMQ and Redis stay in-cluster ──
+rabbitmq:
+  replicaCount: 1
+  image: rabbitmq:3-management-alpine
+  user: guest
+  password: guest
+  storage: 5Gi
+
+redis:
+  replicaCount: 1
+  image: redis:7-alpine
+  storage: 2Gi
+
+# ── Ingress: AWS Load Balancer Controller (ALB) ──
+ingress:
+  enabled: true
+  className: alb
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    # Uncomment for HTTPS (requires ACM certificate ARN):
+    # alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    # alb.ingress.kubernetes.io/ssl-redirect: "443"
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:REGION:ACCOUNT:certificate/CERT_ID
+
+# ── KEDA autoscaling ──
+autoScaling:
+  worker:
+    enabled: true
+    useKeda: true
+    queueName: submissions.execute
+    queueTarget: "5"
+    pollingInterval: 10
+    cooldownPeriod: 300
+  submissionService:
+    enabled: false
+
+# ── Monitoring ──
+monitoring:
+  enabled: false   # set true if kube-prometheus-stack is installed

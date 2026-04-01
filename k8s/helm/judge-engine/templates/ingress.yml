@@ -1,3 +1,4 @@
+{{- if .Values.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -5,8 +6,12 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     {{- include "judge-engine.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
-  ingressClassName: nginx
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
     - http:
         paths:
@@ -24,3 +29,4 @@ spec:
                 name: {{ include "judge-engine.fullname" . }}-frontend
                 port:
                   number: 80
+{{- end }}

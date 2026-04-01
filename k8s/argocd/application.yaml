@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: judge-engine
+  namespace: argocd
+  # Cleanup all resources when this Application is deleted
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/nguyengoctu/judge-engine.git
+    targetRevision: HEAD
+    path: k8s/helm/judge-engine
+    helm:
+      # Merge base values with EKS-specific overrides
+      valueFiles:
+        - values.yaml
+        - values-eks.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: judge-engine
+
+  syncPolicy:
+    automated:
+      # Delete resources removed from Helm chart
+      prune: true
+      # Revert manual kubectl changes
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        maxDuration: 3m
+        factor: 2
+
+  # Health checks — ArgoCD won't mark sync as complete until all pods are Ready
+  ignoreDifferences:
+    # HPA/KEDA may modify replicas at runtime — ignore to avoid false OutOfSync
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

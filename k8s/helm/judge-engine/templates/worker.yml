@@ -1,6 +1,7 @@
+{{- $runnerRegistry := default (printf "%s-registry:5000" (include "judge-engine.fullname" .)) .Values.worker.runnerRegistry }}
 apiVersion: apps/v1
 kind: Deployment
-metadata: 
+metadata:
   name: {{ include "judge-engine.fullname" . }}-worker
   namespace: {{ .Values.global.namespace }}
   labels:
@@ -15,7 +16,14 @@ spec:
         {{- include "judge-engine.labels" . | nindent 8 }}
         app: worker
     spec:
-      # Init: wait for DinD + pull runner images from in-cluster registry
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "judge-engine.fullname" . }}-sa
+      {{- end }}
+      # Init: wait for DinD + pull runner images
       initContainers:
         - name: pull-runners
           image: docker:cli
@@ -24,7 +32,7 @@ spec:
             - name: DOCKER_HOST
               value: tcp://localhost:2375
             - name: REGISTRY
-              value: {{ include "judge-engine.fullname" . }}-registry:5000
+              value: {{ $runnerRegistry }}
           resources:
             requests:
               cpu: {{ .Values.worker.resources.containers.builder.requests.cpu }}
@@ -32,6 +40,12 @@ spec:
             limits:
               cpu: {{ .Values.worker.resources.containers.builder.limits.cpu }}
               memory: {{ .Values.worker.resources.containers.builder.limits.memory }}
+          {{- if .Values.worker.ghcrSecret }}
+          volumeMounts:
+            - name: docker-config
+              mountPath: /root/.docker
+              readOnly: true
+          {{- end }}
           command:
             - sh
             - -c
@@ -45,8 +59,8 @@ spec:
                 IMAGE="$REGISTRY/judge-runner-${lang}:latest"
                 echo "Pulling $IMAGE ..."
                 until docker pull "$IMAGE" 2>/dev/null; do
-                  echo "  Waiting for $IMAGE in registry..."
-                  sleep 3
+                  echo "  Waiting for $IMAGE ..."
+                  sleep 5
                 done
                 echo "  $IMAGE ready"
               done
@@ -95,8 +109,10 @@ spec:
         # Docker-in-Docker sidecar
         - name: dind
           image: docker:dind
+          {{- if not .Values.worker.runnerRegistry }}
           args:
             - --insecure-registry={{ include "judge-engine.fullname" . }}-registry:5000
+          {{- end }}
           securityContext:
             privileged: true
           env:
@@ -115,6 +131,16 @@ spec:
       volumes:
         - name: dind-storage
           emptyDir: {}
+        {{- if .Values.worker.ghcrSecret }}
+        # Docker config with GHCR credentials for runner image pulls
+        # Source secret format: kubernetes.io/dockerconfigjson
+        - name: docker-config
+          secret:
+            secretName: {{ .Values.worker.ghcrSecret }}
+            items:
+              - key: .dockerconfigjson
+                path: config.json
+        {{- end }}
 
 {{- if .Values.monitoring.enabled }}
 ---

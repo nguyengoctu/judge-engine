@@ -4,8 +4,22 @@ global:
 image:
   imagePullPolicy: Never
 
+# imagePullSecrets for private registries (e.g. GHCR PAT stored as K8s secret)
+# create with: kubectl create secret docker-registry ghcr-pull-secret \
+#   --docker-server=ghcr.io --docker-username=<user> --docker-password=<PAT> -n judge-engine
+imagePullSecrets: []
+# - name: ghcr-pull-secret
+
 ingress:
   enabled: true
+  className: nginx
+  annotations: {}
+  # For AWS ALB:
+  # className: alb
+  # annotations:
+  #   alb.ingress.kubernetes.io/scheme: internet-facing
+  #   alb.ingress.kubernetes.io/target-type: ip
+  #   alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
 
 monitoring:
   enabled: true
@@ -52,6 +66,13 @@ worker:
   dind:
     enabled: true
   executorMode: docker
+  # Override runner image registry for EKS (GHCR or ECR).
+  # Empty = use in-cluster registry (local/kind).
+  # e.g. ghcr.io/nguyengoctu/judge-engine
+  runnerRegistry: ""
+  # Name of a K8s docker-registry secret used by DinD to pull runner images.
+  # Only needed when runnerRegistry is a private registry.
+  ghcrSecret: ""
   resources:
     containers:
       builder:
@@ -85,7 +106,9 @@ worker:
       maxMemory: "256"
 
 # in-cluster docker registry (for runner images)
+# Disable when using GHCR or ECR as runner image source
 registry:
+  enabled: true
   storage: 2Gi
 
 # third party
@@ -103,11 +126,31 @@ redis:
   storage: 1Gi
 
 judgeDb:
+  # Set enabled: false when using RDS (managed Postgres)
+  enabled: true
   replicaCount: 1
   image: postgres:16-alpine
   user: postgres
   password: postgres
   storage: 1Gi
+  # External host override (used in configMap when enabled: false)
+  # e.g. mydb.xxxx.rds.amazonaws.com
+  host: ""
+
+# External Secrets Operator — EKS only.
+# When enabled: credentials come from AWS Secrets Manager (no inline Secrets).
+# When disabled: credentials come from values.yaml (local/kind).
+externalSecrets:
+  enabled: false
+  # Secrets Manager secret name — set by infra.yml after terraform apply
+  secretName: ""
+
+# ServiceAccount with IRSA (AWS IAM Role for Service Account)
+# Useful when pods need AWS service access (e.g. Secrets Manager, ECR)
+serviceAccount:
+  create: false
+  # arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>
+  iamRoleArn: ""
 
 # hpa / keda
 autoScaling:

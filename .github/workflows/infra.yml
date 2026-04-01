@@ -1,0 +1,196 @@
+name: Infra
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Fully automated GitOps pipeline for infrastructure.
+#
+# On PR  → terraform plan (comment on PR, no changes)
+# On push to master (terraform/** changed) → full pipeline:
+#   1. terraform apply phase-1  (VPC, EKS, RDS, IAM)
+#   2. terraform apply phase-2  (add-ons: ArgoCD, ALB Controller, KEDA, ESO)
+#   3. Update values-eks.yaml with RDS endpoint + secret name
+#   4. Commit + push values-eks.yaml
+#   5. Apply ArgoCD Application → ArgoCD picks up the rest
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: ["master"]
+    paths: ["terraform/**"]
+  pull_request:
+    branches: ["master"]
+    paths: ["terraform/**"]
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Terraform action"
+        required: true
+        default: plan
+        type: choice
+        options: [plan, apply, destroy]
+
+env:
+  TF_VERSION: "1.8.3"
+  TF_DIR: terraform
+  AWS_REGION: us-east-1
+
+permissions:
+  id-token: write       # OIDC → AWS
+  contents: write       # push values-eks.yaml update
+  pull-requests: write  # post plan comment
+
+jobs:
+  terraform:
+    name: Terraform ${{ github.event.inputs.action || (github.event_name == 'pull_request' && 'plan') || 'apply' }}
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ env.TF_DIR }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      # ── AWS auth via OIDC (no long-lived keys) ─────────────────────────────
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false   # needed for clean output parsing
+
+      - name: Terraform fmt check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform validate
+        run: terraform validate
+
+      # ── Plan (PR only) ─────────────────────────────────────────────────────
+      - name: Terraform plan
+        id: plan
+        if: github.event_name == 'pull_request' || github.event.inputs.action == 'plan'
+        run: terraform plan -no-color 2>&1 | tee /tmp/tfplan.txt
+        continue-on-error: true
+
+      - name: Post plan comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('/tmp/tfplan.txt', 'utf8');
+            const truncated = plan.length > 60000 ? plan.substring(0, 60000) + '\n...(truncated)' : plan;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `#### Terraform Plan 📋\n\`\`\`hcl\n${truncated}\n\`\`\`\n*By @${{ github.actor }}*`
+            });
+
+      - name: Fail on plan error
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      # ── Apply: Phase 1 — Core infrastructure ──────────────────────────────
+      # VPC, EKS, RDS, IAM — no kubernetes/helm providers needed yet.
+      - name: "[Phase 1] Apply core infra"
+        if: |
+          (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        run: |
+          terraform apply -auto-approve \
+            -target=module.vpc \
+            -target=module.eks \
+            -target=module.rds \
+            -target=module.iam
+
+      # ── Update kubeconfig after EKS is ready ──────────────────────────────
+      - name: Update kubeconfig
+        if: |
+          (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        run: |
+          CLUSTER_NAME=$(terraform output -raw cluster_name)
+          aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$AWS_REGION"
+
+      # ── Apply: Phase 2 — Kubernetes add-ons ───────────────────────────────
+      # ArgoCD, ALB Controller, KEDA, ESO, gp3 StorageClass.
+      - name: "[Phase 2] Apply add-ons"
+        if: |
+          (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        run: terraform apply -auto-approve
+
+      # ── Sync values-eks.yaml with terraform outputs ────────────────────────
+      # Writes RDS endpoint + Secrets Manager secret name so ArgoCD can use them.
+      - name: Update values-eks.yaml
+        if: |
+          (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        working-directory: ${{ github.workspace }}
+        run: |
+          RDS_ENDPOINT=$(cd $TF_DIR && terraform output -raw rds_endpoint)
+          SECRET_NAME=$(cd $TF_DIR && terraform output -raw app_secret_name)
+
+          VALUES_FILE="k8s/helm/judge-engine/values-eks.yaml"
+
+          sed -i "s|host: \".*\"|host: \"${RDS_ENDPOINT}\"|" "$VALUES_FILE"
+          sed -i "s|secretName: \".*\"|secretName: \"${SECRET_NAME}\"|" "$VALUES_FILE"
+
+          echo "Updated values-eks.yaml:"
+          grep -E "host:|secretName:" "$VALUES_FILE"
+
+      - name: Commit values-eks.yaml
+        if: |
+          (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        working-directory: ${{ github.workspace }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/helm/judge-engine/values-eks.yaml
+          # Only commit if something changed
+          git diff --staged --quiet || \
+            git commit -m "chore: sync RDS endpoint and secret name from terraform [skip ci]"
+          git push origin HEAD:master
+
+      # ── Apply ArgoCD Application ───────────────────────────────────────────
+      # ArgoCD is now running (installed in Phase 2).
+      # Applying the Application CR tells ArgoCD to deploy the judge-engine chart.
+      - name: Apply ArgoCD Application
+        if: |
+          (github.event_name == 'push' && github.ref == 'refs/heads/master') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+        working-directory: ${{ github.workspace }}
+        run: |
+          # Wait for ArgoCD to be ready
+          kubectl wait --for=condition=available deployment/argocd-server \
+            -n argocd --timeout=180s
+
+          kubectl apply -f k8s/argocd/application.yaml
+
+          echo ""
+          echo "=== ArgoCD Application applied ==="
+          echo "ArgoCD will now sync the Helm chart automatically."
+          echo ""
+          echo "ArgoCD admin password:"
+          kubectl get secret argocd-initial-admin-secret \
+            -n argocd -o jsonpath='{.data.password}' | base64 -d
+          echo ""
+          echo "Port-forward to access UI:"
+          echo "  kubectl port-forward svc/argocd-server -n argocd 8080:80"
+
+      # ── Destroy (manual only, safety gate) ────────────────────────────────
+      - name: Terraform destroy
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+        run: terraform destroy -auto-approve

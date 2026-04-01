@@ -42,3 +42,15 @@ Thumbs.db
 
 # tmp md
 docs/tmp
+
+# terraform
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+terraform.tfstate
+terraform.tfstate.backup
+*.tfplan
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
