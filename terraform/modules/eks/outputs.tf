@@ -19,5 +19,6 @@ output "oidc_provider_url" {
 }
 
 output "node_security_group_id" {
-  value = aws_security_group.nodes.id
+  description = "Cluster security group — the SG that EKS managed nodes actually use"
+  value       = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
 }

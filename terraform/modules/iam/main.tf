@@ -137,7 +137,7 @@ resource "aws_iam_policy" "eso" {
         "secretsmanager:GetSecretValue",
         "secretsmanager:DescribeSecret",
       ]
-      Resource = "arn:aws:secretsmanager:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:secret:${var.project}/*"
+      Resource = "arn:aws:secretsmanager:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:secret:${local.name}/*"
     }]
   })
 }
