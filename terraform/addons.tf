@@ -188,31 +188,57 @@ resource "kubernetes_service_account_v1" "eso" {
   depends_on = [helm_release.external_secrets]
 }
 
-# ClusterSecretStore — single store for the whole cluster
-resource "kubernetes_manifest" "cluster_secret_store" {
-  manifest = {
-    apiVersion = "external-secrets.io/v1beta1"
-    kind       = "ClusterSecretStore"
-    metadata = {
-      name = "aws-secrets-manager"
-    }
-    spec = {
-      provider = {
-        aws = {
-          service = "SecretsManager"
-          region  = var.aws_region
-          auth = {
-            jwt = {
-              serviceAccountRef = {
-                name      = kubernetes_service_account_v1.eso.metadata[0].name
-                namespace = "external-secrets"
+# ClusterSecretStore — single store for the whole cluster.
+# Using null_resource because kubernetes_manifest validates CRDs at plan time,
+# but ESO CRDs don't exist until the helm_release above is applied.
+resource "null_resource" "cluster_secret_store" {
+  triggers = {
+    manifest = sha256(jsonencode({
+      apiVersion = "external-secrets.io/v1beta1"
+      kind       = "ClusterSecretStore"
+      metadata = {
+        name = "aws-secrets-manager"
+      }
+      spec = {
+        provider = {
+          aws = {
+            service = "SecretsManager"
+            region  = var.aws_region
+            auth = {
+              jwt = {
+                serviceAccountRef = {
+                  name      = kubernetes_service_account_v1.eso.metadata[0].name
+                  namespace = "external-secrets"
+                }
               }
             }
           }
         }
       }
-    }
+    }))
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      cat <<'EOF' | kubectl apply -f -
+      apiVersion: external-secrets.io/v1beta1
+      kind: ClusterSecretStore
+      metadata:
+        name: aws-secrets-manager
+      spec:
+        provider:
+          aws:
+            service: SecretsManager
+            region: ${var.aws_region}
+            auth:
+              jwt:
+                serviceAccountRef:
+                  name: ${kubernetes_service_account_v1.eso.metadata[0].name}
+                  namespace: external-secrets
+      EOF
+    EOT
   }
 
   depends_on = [helm_release.external_secrets, kubernetes_service_account_v1.eso]
 }
+

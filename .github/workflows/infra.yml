@@ -179,6 +179,12 @@ jobs:
           echo "  kubectl port-forward svc/argocd-server -n argocd 8080:80"
 
       # ── Destroy (manual only, safety gate) ────────────────────────────────
+      - name: Clean orphaned state entries
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+        run: |
+          terraform state rm kubernetes_manifest.cluster_secret_store 2>/dev/null || true
+
       - name: Terraform destroy
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
         run: terraform destroy -auto-approve
+
