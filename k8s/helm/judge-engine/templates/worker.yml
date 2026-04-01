@@ -81,6 +81,16 @@ spec:
           env:
             - name: DOCKER_HOST
               value: tcp://localhost:2375
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "judge-engine.fullname" . }}-secret
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "judge-engine.fullname" . }}-secret
+                  key: POSTGRES_PASSWORD
           livenessProbe:
             httpGet:
               path: /health
@@ -105,17 +115,6 @@ spec:
                 name: {{ include "judge-engine.fullname" . }}-config
             - secretRef:
                 name: {{ include "judge-engine.fullname" . }}-secret
-          env:
-            - name: DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "judge-engine.fullname" . }}-secret
-                  key: POSTGRES_USER
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "judge-engine.fullname" . }}-secret
-                  key: POSTGRES_PASSWORD
 
         # Docker-in-Docker sidecar
         - name: dind
