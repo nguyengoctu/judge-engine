@@ -5,9 +5,10 @@ locals {
 # ── Random passwords ──────────────────────────────────────────────────────────
 
 resource "random_password" "db" {
-  length           = 24
-  special          = true
-  override_special = "!_-"   # URL-safe only — avoid :@%#/?= which break connection strings
+  length  = 24
+  special = true
+  # URL-safe only — avoid :@%#/?= which break connection strings
+  override_special = "!_-"
 }
 
 resource "random_password" "rabbitmq" {
