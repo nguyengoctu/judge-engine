@@ -33,7 +33,7 @@ logLevel: INFO
 logFormat: json
 
 # ── Image tags — updated automatically by CD pipeline on each release tag ──
-version: v0.2.4
+version: v0.2.5
 
 # ── Service images from GHCR ──
 apiGateway:
