@@ -42,8 +42,8 @@ data:
   MOCK_EXEC_TIMEOUT: {{ .Values.worker.resources.mock.execTimeout | quote }}
   MOCK_EXEC_MAX_MEMORY: {{ .Values.worker.resources.mock.maxMemory | quote }}
   
-  # Runner image registry (in-cluster)
-  RUNNER_REGISTRY: {{ include "judge-engine.fullname" . }}-registry:5000/
+  # Runner image registry — GHCR on EKS, in-cluster on local/kind
+  RUNNER_REGISTRY: {{ default (printf "%s-registry:5000" (include "judge-engine.fullname" .)) .Values.worker.runnerRegistry }}/
   
   # Logging
   LOG_LEVEL: {{ .Values.logLevel }}
