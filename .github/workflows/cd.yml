@@ -98,7 +98,7 @@ jobs:
         with:
           # Use a PAT if repo has branch protection rules on master;
           # otherwise GITHUB_TOKEN is sufficient for pushing to master.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
           fetch-depth: 0
 
       - name: Get version
