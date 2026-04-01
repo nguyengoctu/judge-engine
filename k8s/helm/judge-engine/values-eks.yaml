@@ -101,13 +101,13 @@ worker:
 # secretName is auto-updated by infra.yml after terraform apply.
 externalSecrets:
   enabled: true
-  secretName: "REPLACE_WITH_SECRET_NAME"
+  secretName: "judge-engine-prod/app/credentials"
 
 # ── Disable in-cluster Postgres — use RDS ──
 judgeDb:
   enabled: false
   # host is auto-updated by infra.yml after terraform apply.
-  host: "REPLACE_WITH_RDS_ENDPOINT"
+  host: "judge-engine-prod-db.ckrskwku8onb.us-east-1.rds.amazonaws.com"
 
 # ── Disable in-cluster registry — runner images are on GHCR ──
 registry:
