@@ -7,7 +7,7 @@ locals {
 resource "random_password" "db" {
   length           = 24
   special          = true
-  override_special = "!#%&*()-_=+[]{}<>:?"
+  override_special = "!_-"   # URL-safe only — avoid :@%#/?= which break connection strings
 }
 
 resource "random_password" "rabbitmq" {
