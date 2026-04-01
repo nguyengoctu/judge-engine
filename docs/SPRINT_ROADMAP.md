@@ -42,7 +42,7 @@ Sprint 0-1: Working App          Sprint 2-5: Local DevOps         Sprint 6-8: Cl
 | 3 ✅ | 🟢 Local | CI/CD pipeline (GitHub Actions) | GitHub Actions, SonarCloud, Trivy, Dependabot |
 | 3.5 | 🟢 Local | CI/CD pipeline (Jenkins) | Jenkins, Jenkinsfile, Webhook, OWASP Dependency-Check |
 | 4 ✅ | 🔵 K8s | Kubernetes basics | Manifests, Deployments, Services, ConfigMaps, kubectl |
-| **5** | 🔵 K8s | **Helm + Monitoring** | Helm charts, Prometheus, Grafana, HPA, load testing |
+| **5** ✅ | 🔵 K8s | **Helm + Monitoring** | Helm charts, Prometheus, Grafana, HPA, load testing |
 | **6** | 🟠 AWS | **Terraform + AWS** | IaC modules, VPC, ECR, RDS, ElastiCache, SQS |
 | **7 ★** | 🟣 EKS | **Deploy EKS** | EKS, IRSA, ArgoCD, Canary deploy, Cluster Autoscaler |
 | 8 | 🟣 EKS | Production hardening | EFK logging, OpenTelemetry, WAF, Chaos Engineering |
