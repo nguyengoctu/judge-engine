@@ -53,7 +53,7 @@ variable "eks_version" {
 variable "node_instance_type" {
   description = "EC2 instance type for EKS worker nodes"
   type        = string
-  default     = "t3.medium"
+  default     = "t3.large"
 }
 
 variable "node_min" {
@@ -68,7 +68,7 @@ variable "node_max" {
 
 variable "node_desired" {
   type    = number
-  default = 2
+  default = 3
 }
 
 # ── RDS ─────────────────────────────────────────────────────────────────────
