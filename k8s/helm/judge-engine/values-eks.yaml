@@ -101,7 +101,7 @@ worker:
 # secretName is auto-updated by infra.yml after terraform apply.
 externalSecrets:
   enabled: true
-  secretName: "judge-engine-prod/app/credentials"
+  secretName: "judge-engine-prod/app/db_credentials"
 
 # ── Disable in-cluster Postgres — use RDS ──
 judgeDb:

@@ -21,7 +21,7 @@ resource "random_password" "rabbitmq" {
 # External Secrets Operator will sync these into a K8s Secret automatically.
 
 resource "aws_secretsmanager_secret" "app" {
-  name                    = "${local.name}/app/credentials"
+  name                    = "${local.name}/app/db_credentials"
   recovery_window_in_days = 0 # immediate deletion allowed in dev/staging
 }
 
