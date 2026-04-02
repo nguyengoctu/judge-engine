@@ -7,7 +7,7 @@ import { RouterOutlet, RouterLink } from '@angular/router';
   imports: [RouterOutlet, RouterLink],
   template: `
     <nav class="navbar">
-      <a routerLink="/" class="logo">⚡ Judge Engine</a>
+      <a routerLink="/" class="logo">⚡ Judge-Engine</a>
       <div class="nav-links">
         <a routerLink="/">Problems</a>
         <a routerLink="/submit">Submit</a>
