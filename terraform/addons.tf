@@ -129,7 +129,7 @@ resource "helm_release" "keda" {
   namespace        = "keda"
   version          = "2.14.2"
   create_namespace = true
-  timeout          = 120            # prevent hanging on destroy (CRD finalizers)
+  timeout          = 120 # prevent hanging on destroy (CRD finalizers)
 
   depends_on = [module.eks]
 }
