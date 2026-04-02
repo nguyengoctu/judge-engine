@@ -1,3 +1,10 @@
+# ── VPC ──────────────────────────────────────────────────────────────────────
+
+output "vpc_id" {
+  description = "VPC ID — used by destroy pre-cleanup to find orphaned ALBs"
+  value       = module.vpc.vpc_id
+}
+
 # ── EKS ──────────────────────────────────────────────────────────────────────
 
 output "cluster_name" {

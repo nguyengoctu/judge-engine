@@ -179,10 +179,70 @@ jobs:
           echo "  kubectl port-forward svc/argocd-server -n argocd 8080:80"
 
       # ── Destroy (manual only, safety gate) ────────────────────────────────
+      # IMPORTANT: We must clean up K8s resources that create out-of-band AWS
+      # resources BEFORE terraform destroy. The ALB Controller creates an ALB
+      # from the Ingress resource — if we destroy the controller first, the ALB
+      # is orphaned and blocks subnet/IGW deletion (DependencyViolation).
+      #
+      # Order: delete Ingress (ALB removed) → delete KEDA CRDs (avoid finalizer
+      # hang) → delete ArgoCD CRDs → clean state → terraform destroy.
+
+      - name: Update kubeconfig (destroy)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+        run: |
+          CLUSTER_NAME=$(terraform output -raw cluster_name 2>/dev/null) || true
+          if [ -n "$CLUSTER_NAME" ]; then
+            aws eks update-kubeconfig --name "$CLUSTER_NAME" --region "$AWS_REGION"
+          fi
+
+      - name: Pre-destroy — clean K8s resources that create AWS resources
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo "=== [1/5] Delete ArgoCD Application (triggers Ingress deletion → ALB cleanup) ==="
+          kubectl delete application judge-engine -n argocd --timeout=120s 2>/dev/null || true
+
+          echo "=== [2/5] Force-delete any remaining Ingress (safety net) ==="
+          kubectl delete ingress --all -n judge-engine --timeout=60s 2>/dev/null || true
+
+          echo "=== [3/5] Wait for ALB to be fully removed ==="
+          VPC_ID=$(cd $TF_DIR && terraform output -raw vpc_id 2>/dev/null) || true
+          if [ -n "$VPC_ID" ]; then
+            echo "Waiting for ALBs in VPC $VPC_ID to be deleted..."
+            for i in $(seq 1 60); do
+              ALB_COUNT=$(aws elbv2 describe-load-balancers \
+                --query "LoadBalancers[?VpcId=='${VPC_ID}'] | length(@)" \
+                --output text 2>/dev/null || echo "0")
+              if [ "$ALB_COUNT" = "0" ]; then
+                echo "All ALBs removed after ${i}0s ✅"
+                break
+              fi
+              echo "  Still $ALB_COUNT ALB(s) in VPC... (${i}/60)"
+              sleep 10
+            done
+          fi
+
+          echo "=== [4/5] Delete KEDA resources + CRDs (avoid finalizer hang) ==="
+          kubectl delete scaledobjects --all -n judge-engine --timeout=30s 2>/dev/null || true
+          kubectl delete triggerauthentications --all -n judge-engine --timeout=30s 2>/dev/null || true
+          # Patch KEDA CRDs to remove finalizers, then delete
+          for crd in scaledobjects.keda.sh triggerauthentications.keda.sh scaledjobs.keda.sh clustertriggerauthentications.keda.sh; do
+            kubectl patch crd "$crd" -p '{"metadata":{"finalizers":null}}' 2>/dev/null || true
+            kubectl delete crd "$crd" --timeout=30s 2>/dev/null || true
+          done
+
+          echo "=== [5/5] Delete ArgoCD CRDs (kept by resource policy) ==="
+          for crd in applications.argoproj.io applicationsets.argoproj.io appprojects.argoproj.io; do
+            kubectl delete crd "$crd" --timeout=30s 2>/dev/null || true
+          done
+
+          echo "=== Pre-destroy cleanup complete ==="
+
       - name: Clean orphaned state entries
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
         run: |
           terraform state rm kubernetes_manifest.cluster_secret_store 2>/dev/null || true
+          terraform state rm null_resource.cluster_secret_store 2>/dev/null || true
 
       - name: Terraform destroy
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'

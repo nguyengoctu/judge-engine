@@ -94,6 +94,7 @@ resource "helm_release" "argocd" {
   namespace        = "argocd"
   version          = "7.3.11"
   create_namespace = true
+  timeout          = 300
 
   values = [
     yamlencode({
@@ -108,6 +109,10 @@ resource "helm_release" "argocd" {
           # Disable TLS termination inside ArgoCD — handled by ALB/Ingress
           "server.insecure" = true
         }
+      }
+      # Remove CRD resource policy so helm uninstall can delete them cleanly
+      crds = {
+        keep = false
       }
     })
   ]
@@ -124,6 +129,7 @@ resource "helm_release" "keda" {
   namespace        = "keda"
   version          = "2.14.2"
   create_namespace = true
+  timeout          = 120            # prevent hanging on destroy (CRD finalizers)
 
   depends_on = [module.eks]
 }
